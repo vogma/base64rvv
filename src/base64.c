@@ -192,11 +192,11 @@ void __attribute__((noinline)) base64_encode(uint8_t *restrict input, uint8_t *o
         vl = __riscv_vsetvl_e8m1(vlmax_8);
 
         // TODO use vrgatherei16.vv here when possible
-        // uint64_t begin = rv_cycles();
+        uint64_t begin = rv_cycles();
         vuint8m1_t vec_gather = __riscv_vrgatherei16_vv_u8m1(vec_input, vec_index, vl);
-        // uint64_t end = rv_cycles();
+        uint64_t end = rv_cycles();
 
-        // printf("cycles: %ld\n", end - begin);
+        printf("cycles: %ld\n", end - begin);
 
         vl = __riscv_vsetvlmax_e32m1();
 
