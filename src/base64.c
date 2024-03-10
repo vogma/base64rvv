@@ -6,15 +6,10 @@
 
 const unsigned char b64chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-void test(const uint8_t *restrict input, const uint8_t *restrict index, uint32_t *output, const char *table, size_t length);
-// void load_test(const uint8_t *restrict input, const uint8_t *restrict index, uint32_t *output, const char *table, size_t length);
-
 int Base64encode_len(int len)
 {
     return ((len + 2) / 3 * 4) + 1;
 }
-static const char basis_64[65] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 int Base64encode(char *encoded, const char *string, int len)
 {
@@ -24,26 +19,26 @@ int Base64encode(char *encoded, const char *string, int len)
     p = encoded;
     for (i = 0; i < len - 2; i += 3)
     {
-        *p++ = basis_64[(string[i] >> 2) & 0x3F];
-        *p++ = basis_64[((string[i] & 0x3) << 4) |
+        *p++ = b64chars[(string[i] >> 2) & 0x3F];
+        *p++ = b64chars[((string[i] & 0x3) << 4) |
                         ((int)(string[i + 1] & 0xF0) >> 4)];
-        *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
+        *p++ = b64chars[((string[i + 1] & 0xF) << 2) |
                         ((int)(string[i + 2] & 0xC0) >> 6)];
-        *p++ = basis_64[string[i + 2] & 0x3F];
+        *p++ = b64chars[string[i + 2] & 0x3F];
     }
     if (i < len)
     {
-        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        *p++ = b64chars[(string[i] >> 2) & 0x3F];
         if (i == (len - 1))
         {
-            *p++ = basis_64[((string[i] & 0x3) << 4)];
+            *p++ = b64chars[((string[i] & 0x3) << 4)];
             *p++ = '=';
         }
         else
         {
-            *p++ = basis_64[((string[i] & 0x3) << 4) |
+            *p++ = b64chars[((string[i] & 0x3) << 4) |
                             ((int)(string[i + 1] & 0xF0) >> 4)];
-            *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
+            *p++ = b64chars[((string[i + 1] & 0xF) << 2)];
         }
         *p++ = '=';
     }
@@ -54,10 +49,10 @@ int Base64encode(char *encoded, const char *string, int len)
 
 // const uint8_t gather_index[] = {2, 1, 0, 0xFF, 5, 4, 3, 0xFF, 8, 7, 6, 0xFF, 11, 10, 9, 0xFF};
 // const uint8_t gather_index[] = {2, 1, 0, 2, 5, 4, 3, 5, 8, 7, 6, 8, 11, 10, 9, 11};
-const uint8_t gather_index_new[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10};
-const uint8_t gather_index_lmul2[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22};
+// const uint8_t gather_index_new[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10};
+// const uint8_t gather_index_lmul2[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22};
 const uint8_t gather_index_lmul4[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
-const uint8_t gather_index_lmul8[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
+// const uint8_t gather_index_lmul8[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
 
 vuint8m4_t loadIndex()
 {
@@ -226,8 +221,8 @@ void __attribute__((noinline)) base64_encode(uint8_t *restrict input, uint8_t *o
     Base64encode((char *)output, (char *)input, length);
 }
 
-#define N 400
-// #define N 1024 * 1024 * 32 // 32 MB
+// #define N 400
+#define N 1024 * 1024 * 32 // 32 MB
 
 char *setupInputData()
 {
@@ -270,13 +265,11 @@ void checkResults(uint8_t *output_scalar, uint8_t *output_vector, size_t length)
 int main(void)
 {
 
-    // 1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10
-
-    for (int i = 0; i < 48; i += 3)
-    {
-        printf("%d, %d, %d, %d, ", i + 1, i, i + 2, i + 1);
-    }
-    printf("\n");
+    // for (int i = 0; i < 48; i += 3)
+    // {
+    //     printf("%d, %d, %d, %d, ", i + 1, i, i + 2, i + 1);
+    // }
+    // printf("\n");
 
     struct timespec start, end;
     uint64_t timeElapsed_scalar, timeElapsed_vector;
