@@ -9,13 +9,15 @@ const int8_t offsets[16] = {65, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16
 
 uint8_t alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-uint64_t cycleCount_asm(uint8_t *data, char *output, const int8_t *offsets, const uint16_t *index);
+uint64_t cycleCount_asm(uint8_t *data, char *output, const int8_t *offsets, const uint16_t *index, size_t *length);
 
 int main(void)
 {
     char output[35];
 
-    uint64_t cycles = cycleCount_asm(alphabet, output, offsets, gather_index_lmul4);
+    size_t length = 26;
+
+    uint64_t cycles = cycleCount_asm(alphabet, output, offsets, gather_index_lmul4, &length);
 
     for (int i = 0; i < 16; i++)
     {

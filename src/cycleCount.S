@@ -4,6 +4,8 @@
 #define output a1
 #define input a0
 #define gather_index a3
+#define length_pt a4
+#define length s2
 #define offsets_vec v5
 
 
@@ -24,10 +26,19 @@ cycleCount_asm:
     vmv.v.x         const_vec_ac, t2
     vmv.v.x         const_vec_bd, t3
 
+# inputSlice = (vlmax_8m1 / 4) * 3
+    vsetvli         s1, zero, e8, m1, ta, ma
+    srli            s1, s1, 2
+    slli            s2, s1, 1
+    add             s1, s2, s1
+
+# load length
+    lw              length, 0(length_pt)
+
 
 # load gather index into vector register
     vsetvli         t6, zero, e16, m2, ta, ma
-    vle16.v         v6, (gather_index)
+    vle16.v         v6, (gather_index)        # occupies v6-v7
 
 # load lookup offsets
     vle8.v          offsets_vec, (offsets)
@@ -69,6 +80,7 @@ cycleCount_asm:
     vse8.v          v8, (output)
 
     sh2add          a0,a0,a0
+    mv              a0,s1
 
     ret
 
