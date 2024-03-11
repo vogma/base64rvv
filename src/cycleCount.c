@@ -9,27 +9,48 @@ const int8_t offsets[16] = {65, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16
 
 uint8_t alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-uint64_t cycleCount_asm(uint8_t *data, char *output, const int8_t *offsets, const uint16_t *index, size_t *length);
+void base64_encode_asm(uint8_t *data, char *output, const int8_t *offsets, const uint16_t *index, int *length);
+
+int Base64encode_len(int len)
+{
+    return ((len + 2) / 3 * 4) + 1;
+}
+#define N 1024 * 1024
+
+uint8_t *setupInputData(uint8_t *inputData)
+{
+    char alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    for (int i = 0; i < N; i++)
+    {
+        inputData[i] = alphabet[i % 26];
+    }
+
+    return inputData;
+}
 
 int main(void)
 {
-    char output[35];
+    char *output = (char *)malloc(Base64encode_len(N));
 
-    size_t length = 26;
+    uint8_t *inputData = (uint8_t *)malloc(sizeof(uint8_t) * N);
 
-    uint64_t cycles = cycleCount_asm(alphabet, output, offsets, gather_index_lmul4, &length);
+    setupInputData(inputData);
 
-    for (int i = 0; i < 16; i++)
-    {
-        printf("0x%02x ", output[i]);
-    }
-    printf("\n");
+    int length = N;
 
-    for (int i = 0; i < 16; i++)
+    base64_encode_asm(inputData, output, offsets, gather_index_lmul4, &length);
+
+    printf("%d \n", length);
+
+    for (int i = 0; i < 30; i++)
     {
         printf("%c", output[i]);
     }
-    printf("\ncycles vrgatherei16: %ld\n", cycles);
+    printf("\n");
+
+    free(output);
+    free(inputData);
 
     return 0;
 }

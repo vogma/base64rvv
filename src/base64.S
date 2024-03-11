@@ -9,8 +9,14 @@
 #define offsets_vec v5
 
 
-    .global         cycleCount_asm
-cycleCount_asm:
+    .global         base64_encode_asm
+base64_encode_asm:
+
+    addi            sp, sp, -32
+    sd              s0, 0(sp)
+    sd              s1, 8(sp)
+    sd              s2, 16(sp)
+    sd              s3, 24(sp)
 
     li              t0, 0x0FC0FC00
     li              t1, 0x003F03F0
@@ -27,14 +33,13 @@ cycleCount_asm:
     vmv.v.x         const_vec_bd, t3
 
 # inputSlice = (vlmax_8m1 / 4) * 3
-    vsetvli         s1, zero, e8, m1, ta, ma
-    srli            s1, s1, 2
-    slli            s2, s1, 1
-    add             s1, s2, s1
+    vsetvli         s3, zero, e8, m1, ta, ma
+    srli            s1, s3, 2
+    sh1add          s1, s1, s1
+
 
 # load length
     lw              length, 0(length_pt)
-
 
 # load gather index into vector register
     vsetvli         t6, zero, e16, m2, ta, ma
@@ -43,8 +48,8 @@ cycleCount_asm:
 # load lookup offsets
     vle8.v          offsets_vec, (offsets)
 
-
 # loop begin
+.loop_start:
     vsetvli         t6, zero, e8, m1, ta, ma
 
     vle8.v          v10, (input)
@@ -57,11 +62,11 @@ cycleCount_asm:
     vand.vx         v11, v18, t0
     vand.vx         v12, v18, t1
 
-    vsetvli         a0, zero, e16, m1, ta, ma
+    vsetvli         t6, zero, e16, m1, ta, ma
     vmulhu.vv       v9, v11, const_vec_ac
     vmul.vv         v8, v12, const_vec_bd
 
-    vsetvli         a0, zero, e32, m1, ta, ma
+    vsetvli         t6, zero, e32, m1, ta, ma
     vor.vv          v8, v9, v8
 
 
@@ -79,8 +84,20 @@ cycleCount_asm:
 # write ascii characters to memory
     vse8.v          v8, (output)
 
-    sh2add          a0,a0,a0
-    mv              a0,s1
+# bump pointers
+    add             input, input, s1
+    add             output, output, s3
+
+    sub             length, length, s1
+    bge             length, s1, .loop_start   # if length >= s1 then .loop_start
+
+    sw              length,(length_pt)
+
+    ld              s0,0(sp)
+    ld              s1,8(sp)
+    ld              s2,16(sp)
+    ld              s3,24(sp)
+    addi            sp,sp,32
 
     ret
 

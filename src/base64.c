@@ -11,7 +11,7 @@ int Base64encode_len(int len)
     return ((len + 2) / 3 * 4) + 1;
 }
 
-int Base64encode(char *encoded, const char *string, int len)
+int __attribute__((__noinline__, __noclone__)) Base64encode(char *encoded, const char *string, int len)
 {
     int i;
     char *p;
@@ -168,7 +168,7 @@ static __attribute__((always_inline)) inline uint64_t rv_cycles(void)
     return cycle;
 }
 
-void __attribute__((noinline)) base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
+void __attribute__((__noinline__, __noclone__)) base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
 {
     size_t vl;
 
@@ -191,12 +191,7 @@ void __attribute__((noinline)) base64_encode(uint8_t *restrict input, uint8_t *o
 
         vl = __riscv_vsetvl_e8m1(vlmax_8);
 
-        // TODO use vrgatherei16.vv here when possible
-        uint64_t begin = rv_cycles();
         vuint8m1_t vec_gather = __riscv_vrgatherei16_vv_u8m1(vec_input, vec_index, vl);
-        uint64_t end = rv_cycles();
-
-        printf("cycles: %ld\n", end - begin);
 
         vl = __riscv_vsetvlmax_e32m1();
 
@@ -221,8 +216,8 @@ void __attribute__((noinline)) base64_encode(uint8_t *restrict input, uint8_t *o
     Base64encode((char *)output, (char *)input, length);
 }
 
-// #define N 400
-#define N 1024 * 1024 * 32 // 32 MB
+// #define N 1000
+#define N 1024 * 1024 * 30 // 32 MB
 
 char *setupInputData()
 {
@@ -262,6 +257,9 @@ void checkResults(uint8_t *output_scalar, uint8_t *output_vector, size_t length)
     }
 }
 
+// assembly function
+void base64_encode_asm(uint8_t *data, char *output, const int8_t *offsets, const uint16_t *index, int *length);
+
 int main(void)
 {
 
@@ -278,25 +276,33 @@ int main(void)
 
     int encode_length = Base64encode_len(N * sizeof(char));
 
-    uint8_t *output_scalar = (uint8_t *)malloc(sizeof(char) * encode_length);
-    uint8_t *output_vector = (uint8_t *)malloc(sizeof(char) * encode_length);
+    uint8_t *output_scalar = (uint8_t *)malloc(sizeof(uint8_t) * encode_length);
+    uint8_t *output_vector = (uint8_t *)malloc(sizeof(uint8_t) * encode_length);
+
+    Base64encode((char *)output_scalar, inputData, N);
 
     // measure scalar code
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     Base64encode((char *)output_scalar, inputData, N);
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     timeElapsed_scalar = timespecDiff(&end, &start);
     printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
 
-    // measure vector code
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    base64_encode((uint8_t *)inputData, output_vector, N);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed_vector = timespecDiff(&end, &start);
-    printf("base64_vector time: %ld\n", timeElapsed_vector / 1000000);
+    int length = N;
 
-    float speedup = ((float)timeElapsed_scalar / (float)timeElapsed_vector);
-    printf("speedup %.02f %%\n", speedup * 100);
+    base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
+    length = N;
+
+    // measure vector code
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    // base64_encode((uint8_t *)inputData, output_vector, N);
+    base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_vector = timespecDiff(&end, &start);
+    printf("base64_vector time: %ld %d\n", timeElapsed_vector / 1000000, length);
+
+    // float speedup = ((float)timeElapsed_scalar / (float)timeElapsed_vector);
+    // printf("speedup %.02f %%\n", speedup * 100);
 
     for (int i = 0; i < 70; i++)
     {
@@ -310,7 +316,7 @@ int main(void)
     }
     printf("\n");
 
-    checkResults(output_scalar, output_vector, encode_length);
+    // checkResults(output_scalar, output_vector, encode_length);
 
     free(inputData);
     free(output_scalar);
