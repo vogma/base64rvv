@@ -11,7 +11,7 @@ int Base64encode_len(int len)
     return ((len + 2) / 3 * 4) + 1;
 }
 
-int __attribute__((__noinline__, __noclone__)) Base64encode(char *encoded, const char *string, int len)
+int __attribute__((always_inline)) inline Base64encode(char *encoded, const char *string, int len)
 {
     int i;
     char *p;
@@ -61,40 +61,6 @@ vuint16m2_t loadIndex()
     // return __riscv_vle8_v_u8m1(gather_index, vl);
 }
 
-const int8_t shift_26 = 65;
-const int8_t shift_26_52 = 71;
-const int8_t shift_52_62 = -4;
-const int8_t shift_62 = -19;
-const int8_t shift_63 = -16;
-
-// vuint8m1_t base64_chars = branchless_table_lookup(__riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices));
-vuint8m1_t branchless_table_lookup_naive(vuint8m1_t vec_indices, size_t vl)
-{
-
-    // mask for values lower 26
-    vbool8_t lt_26 = __riscv_vmsltu_vx_u8m1_b8(vec_indices, 26, vl);
-    vec_indices = __riscv_vadd_vx_u8m1_m(lt_26, vec_indices, shift_26, vl);
-
-    // mask for values lower or eq to 26 and smaller than 52
-    vbool8_t eq_or_gt_26 = __riscv_vmnot_m_b8(lt_26, vl);
-    vbool8_t lt_52 = __riscv_vmsltu_vx_u8m1_b8(vec_indices, 52, vl);
-    vbool8_t bt_26_52 = __riscv_vmand_mm_b8(eq_or_gt_26, lt_52, vl);
-    vec_indices = __riscv_vadd_vx_u8m1_m(bt_26_52, vec_indices, shift_26_52, vl);
-
-    vbool8_t eq_or_gt_52 = __riscv_vmnot_m_b8(lt_52, vl);
-    vbool8_t lt_62 = __riscv_vmsltu_vx_u8m1_b8(vec_indices, 62, vl);
-    vbool8_t bt_52_62 = __riscv_vmand_mm_b8(eq_or_gt_52, lt_62, vl);
-    vec_indices = __riscv_vadd_vx_u8m1_m(bt_52_62, vec_indices, shift_52_62, vl);
-
-    vbool8_t eq_62 = __riscv_vmseq_vx_u8m1_b8(vec_indices, 62, vl);
-    vec_indices = __riscv_vadd_vx_u8m1_m(eq_62, vec_indices, shift_62, vl);
-
-    vbool8_t eq_63 = __riscv_vmseq_vx_u8m1_b8(vec_indices, 63, vl);
-    vec_indices = __riscv_vadd_vx_u8m1_m(eq_63, vec_indices, shift_63, vl);
-
-    return vec_indices;
-}
-
 const int8_t offsets[16] = {65, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 71, 0, 0};
 
 vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vuint8m1_t vec_indices, vint8m1_t offset_vec, size_t vl)
@@ -116,26 +82,7 @@ vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vui
     // return vec_indices;
 }
 
-vuint32m1_t create_lookup_indices_naive(vuint8m1_t data, size_t vl)
-{
-
-    vuint32m1_t input32 = __riscv_vreinterpret_v_u8m1_u32m1(data);
-    vuint32m1_t vec_and1 = __riscv_vand_vx_u32m1(input32, 0x003F0000, vl);
-    vuint32m1_t vec_and2 = __riscv_vand_vx_u32m1(input32, 0x0FC00000, vl);
-    vuint32m1_t vec_and3 = __riscv_vand_vx_u32m1(input32, 0x000003F0, vl);
-    vuint32m1_t vec_and4 = __riscv_vand_vx_u32m1(input32, 0x0000FC00, vl);
-
-    vec_and1 = __riscv_vsll_vx_u32m1(vec_and1, 8, vl);
-    vec_and2 = __riscv_vsrl_vx_u32m1(vec_and2, 6, vl);
-    vec_and3 = __riscv_vsll_vx_u32m1(vec_and3, 4, vl);
-    vec_and4 = __riscv_vsrl_vx_u32m1(vec_and4, 10, vl);
-
-    vuint32m1_t vec_or1 = __riscv_vor_vv_u32m1(vec_and1, vec_and2, vl);
-    vuint32m1_t vec_or2 = __riscv_vor_vv_u32m1(vec_and3, vec_and4, vl);
-    return __riscv_vor_vv_u32m1(vec_or1, vec_or2, vl);
-}
-
-vuint32m1_t create_lookup_indices_opt(vuint8m1_t data, size_t vl)
+vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuint8m1_t data, size_t vl)
 {
 
     vuint32m1_t const_vec_ac = __riscv_vmv_v_x_u32m1(0x04000040, vl);
@@ -161,14 +108,8 @@ vuint32m1_t create_lookup_indices_opt(vuint8m1_t data, size_t vl)
     return __riscv_vor_vv_u32m1(__riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_ac), __riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_bd), vl);
 }
 
-static __attribute__((always_inline)) inline uint64_t rv_cycles(void)
-{
-    uint64_t cycle;
-    __asm volatile("rdcycle %0" : "=r"(cycle));
-    return cycle;
-}
 
-void __attribute__((__noinline__, __noclone__)) base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
+void __attribute__((always_inline)) inline base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
 {
     size_t vl;
 
@@ -289,7 +230,7 @@ int main(void)
     printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
 
     int length = N;
-
+    // base64_encode((uint8_t *)inputData, output_vector, N);
     base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
     length = N;
 
