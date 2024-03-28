@@ -11,7 +11,7 @@ int Base64encode_len(int len)
     return ((len + 2) / 3 * 4) + 1;
 }
 
-int __attribute__((always_inline)) inline Base64encode(char *encoded, const char *string, int len)
+int Base64encode(char *encoded, const char *string, int len)
 {
     int i;
     char *p;
@@ -47,12 +47,7 @@ int __attribute__((always_inline)) inline Base64encode(char *encoded, const char
     return p - encoded;
 }
 
-// const uint8_t gather_index[] = {2, 1, 0, 0xFF, 5, 4, 3, 0xFF, 8, 7, 6, 0xFF, 11, 10, 9, 0xFF};
-// const uint8_t gather_index[] = {2, 1, 0, 2, 5, 4, 3, 5, 8, 7, 6, 8, 11, 10, 9, 11};
-// const uint8_t gather_index_new[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10};
-// const uint8_t gather_index_lmul2[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22};
 const uint16_t gather_index_lmul4[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
-// const uint8_t gather_index_lmul8[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
 
 vuint16m2_t loadIndex()
 {
@@ -109,7 +104,7 @@ vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuin
 }
 
 
-void __attribute__((always_inline)) inline base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
+void base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
 {
     size_t vl;
 
@@ -236,11 +231,11 @@ int main(void)
 
     // measure vector code
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-    // base64_encode((uint8_t *)inputData, output_vector, N);
-    base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
+    base64_encode((uint8_t *)inputData, output_vector, N);
+    // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     timeElapsed_vector = timespecDiff(&end, &start);
-    printf("base64_vector time: %ld %d\n", timeElapsed_vector / 1000000, length);
+    printf("base64_vector time: %ld\n", timeElapsed_vector / 1000000);
 
     // float speedup = ((float)timeElapsed_scalar / (float)timeElapsed_vector);
     // printf("speedup %.02f %%\n", speedup * 100);
@@ -257,7 +252,7 @@ int main(void)
     }
     printf("\n");
 
-    // checkResults(output_scalar, output_vector, encode_length);
+    checkResults(output_scalar, output_vector, encode_length);
 
     free(inputData);
     free(output_scalar);
