@@ -79,12 +79,21 @@ void base64_decode_rvv(const unsigned char *data, uint8_t *output, size_t input_
 
     vuint8m1_t data_reg = __riscv_vle8_v_u8m1(data, vlmax_8);
 
+    vint8m1_t offset_reg;
+
     vbool8_t mask_gt_A = __riscv_vmsgt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 64, vlmax_8);
     vbool8_t mask_lt_Z = __riscv_vmslt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 91, vlmax_8);
-
     vbool8_t mask_AZ = __riscv_vmand_mm_b8(mask_gt_A, mask_lt_Z, vlmax_8);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -65, mask_AZ, vlmax_8);
 
-    __riscv_vse8_v_u8m1_m(mask_AZ, output, data_reg, vlmax_8);
+    vbool8_t mask_gt_a = __riscv_vmsgt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 96, vlmax_8);
+    vbool8_t mask_lt_z = __riscv_vmslt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 123, vlmax_8);
+    vbool8_t mask_az = __riscv_vmand_mm_b8(mask_gt_a, mask_lt_z, vlmax_8);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -71, mask_az, vlmax_8);
+
+    // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
+    // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
+    __riscv_vse8_v_i8m1(output,offset_reg, vlmax_8);
 }
 
 int main(void)
@@ -93,25 +102,43 @@ int main(void)
     size_t output_length = 0;
     size_t output_length_rvv = 0;
 
-    uint8_t *output_scalar = (uint8_t *)malloc(30 * sizeof(uint8_t));
-    uint8_t *output_rvv = (uint8_t *)malloc(30 * sizeof(uint8_t));
+    int8_t *output_scalar = (int8_t *)malloc(30 * sizeof(uint8_t));
+    int8_t *output_rvv = (int8_t *)malloc(30 * sizeof(uint8_t));
 
     build_decoding_table();
 
-    for (int i = 0; i < 256; i++)
-    {
-        if (decoding_table[i] != 0 || i == 65)
-        {
-            printf("%d: 0x%02X\n", i, decoding_table[i]);
-        }
-    }
+    // for (int i = 0; i < 256; i++)
+    // {
+    //     if (decoding_table[i] != 0 || i == 65)
+    //     {
+    //         printf("%d: 0x%02X\n", i, decoding_table[i]);
+    //     }
+    // }
 
     output_scalar = (uint8_t *)base64_decode(base64_data, 28, &output_length);
     base64_decode_rvv(base64_data, output_rvv, 28, output_length_rvv);
     // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
 
-    printf("Decoded: %s\n", output_scalar);
-    printf("Decoded_rvv: %s\n", output_rvv);
+    printf("Original: %s\n", base64_data);
+
+    for (int i = 0; i < 16; i++)
+    {
+        printf("%d ", base64_data[i]);
+    }
+
+    printf("\n\nDecoded:\n");
+    for (int i = 0; i < 16; i++)
+    {
+        printf("%d ", output_scalar[i]);
+    }
+
+    printf("\nDecoded_rvv:\n", output_rvv);
+
+    for (int i = 0; i < 16; i++)
+    {
+        printf("%d ", output_rvv[i]);
+    }
+    printf("\n");
 
     free(output_rvv);
     free(output_scalar);
