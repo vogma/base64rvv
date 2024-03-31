@@ -4,6 +4,8 @@
 #include "riscv_vector.h"
 #include <time.h>
 
+#define NO_ERROR -1
+
 static char *decoding_table = NULL;
 
 static char encoding_table[65] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
@@ -73,27 +75,54 @@ void base64_cleanup()
     free(decoding_table);
 }
 
+vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
+{
+
+    vint8m1_t offset_reg = __riscv_vmv_v_x_i8m1(0, vl);
+
+    vbool8_t mask_gt_A = __riscv_vmsgt_vx_i8m1_b8(data, 64, vl);
+    vbool8_t mask_lt_Z = __riscv_vmslt_vx_i8m1_b8(data, 91, vl);
+    vbool8_t mask_AZ = __riscv_vmand_mm_b8(mask_gt_A, mask_lt_Z, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -65, mask_AZ, vl);
+
+    vbool8_t mask_gt_a = __riscv_vmsgt_vx_i8m1_b8(data, 96, vl);
+    vbool8_t mask_lt_z = __riscv_vmslt_vx_i8m1_b8(data, 123, vl);
+    vbool8_t mask_az = __riscv_vmand_mm_b8(mask_gt_a, mask_lt_z, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -71, mask_az, vl);
+
+    vbool8_t mask_gt_0 = __riscv_vmsgt_vx_i8m1_b8(data, 47, vl);
+    vbool8_t mask_lt_9 = __riscv_vmslt_vx_i8m1_b8(data, 58, vl);
+    vbool8_t mask_09 = __riscv_vmand_mm_b8(mask_gt_0, mask_lt_9, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 4, mask_09, vl);
+
+    vbool8_t mask_eq_plus = __riscv_vmseq_vx_i8m1_b8(data, '+', vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 19, mask_eq_plus, vl);
+
+    vbool8_t mask_eq_slash = __riscv_vmseq_vx_i8m1_b8(data, '/', vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 16, mask_eq_slash, vl);
+
+    // if any of the elements of offset_reg is 0, the input contains invalid characters
+    int error = __riscv_vfirst_m_b8(__riscv_vmseq_vx_i8m1_b8(offset_reg, 0, vl), vl);
+
+    if (error != NO_ERROR)
+    {
+        printf("ERROR!\n");
+    }
+
+    return offset_reg;
+}
+
 void base64_decode_rvv(const unsigned char *data, uint8_t *output, size_t input_length, size_t output_length)
 {
     size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
 
     vuint8m1_t data_reg = __riscv_vle8_v_u8m1(data, vlmax_8);
 
-    vint8m1_t offset_reg;
+    vint8m1_t offset_reg = vector_lookup_naive(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), vlmax_8);
 
-    vbool8_t mask_gt_A = __riscv_vmsgt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 64, vlmax_8);
-    vbool8_t mask_lt_Z = __riscv_vmslt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 91, vlmax_8);
-    vbool8_t mask_AZ = __riscv_vmand_mm_b8(mask_gt_A, mask_lt_Z, vlmax_8);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -65, mask_AZ, vlmax_8);
-
-    vbool8_t mask_gt_a = __riscv_vmsgt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 96, vlmax_8);
-    vbool8_t mask_lt_z = __riscv_vmslt_vx_i8m1_b8(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), 123, vlmax_8);
-    vbool8_t mask_az = __riscv_vmand_mm_b8(mask_gt_a, mask_lt_z, vlmax_8);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -71, mask_az, vlmax_8);
-
-    // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
+       // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
     // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
-    __riscv_vse8_v_i8m1(output,offset_reg, vlmax_8);
+    __riscv_vse8_v_i8m1(output, offset_reg, vlmax_8);
 }
 
 int main(void)
