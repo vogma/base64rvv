@@ -136,40 +136,44 @@ vuint32m1_t pack_data(vint8m1_t data, size_t vl)
     // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
+const uint8_t index_decode[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
+
 void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, size_t output_length)
 {
     size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
 
-    vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
+    for (; input_length >= vlmax_8; input_length -= vlmax_8)
+    {
+        vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
 
-    data_reg = vector_lookup_naive(data_reg, vlmax_8);
+        data_reg = vector_lookup_naive(data_reg, vlmax_8);
 
-    vuint32m1_t test = pack_data(data_reg, vlmax_8);
+        vuint32m1_t test = pack_data(data_reg, vlmax_8);
 
-    uint8_t index[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
+        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_8);
 
-    vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index, vlmax_8);
+        // rearrange elements in vector
+        vuint8m1_t result = __riscv_vrgather_vv_u8m1(__riscv_vreinterpret_v_u32m1_u8m1(test), index_vector, vlmax_8);
 
-    // rearrange elements in vector
-    vuint8m1_t result = __riscv_vrgather_vv_u8m1(__riscv_vreinterpret_v_u32m1_u8m1(test), index_vector, vlmax_8);
+        // only store 12 of 16 bytes
+        size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
-    // only store 12 of 16 bytes
-    size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
+        __riscv_vse8_v_u8m1(output, result, vl);
 
-    // __riscv_vsuxei8_v_u8m1(output, index_vector, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
-    // __riscv_vse8_v_u8m1(output, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
-    __riscv_vse8_v_u8m1(output, result, vl);
+        data += vlmax_8;
+        output += (vlmax_8 / 4) * 3;
+    }
 }
 
 int main(void)
 {
     // const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
-    const char *base64_data = "MTIzNDU2NysvQUJDREVGR0g=";
+    const char *base64_data = "MTIzNDU2NysvQUJDREVGR0hhYmNkZWZnaGlqa2w=";
     size_t output_length = 0;
     size_t output_length_rvv = 0;
 
-    int8_t *output_scalar = (int8_t *)malloc(30 * sizeof(uint8_t));
-    int8_t *output_rvv = (int8_t *)malloc(30 * sizeof(uint8_t));
+    int8_t *output_scalar = (int8_t *)malloc(100 * sizeof(uint8_t));
+    int8_t *output_rvv = (int8_t *)malloc(100 * sizeof(uint8_t));
 
     build_decoding_table();
 
@@ -181,32 +185,32 @@ int main(void)
     //     }
     // }
 
-    output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, 28, &output_length);
-    base64_decode_rvv(base64_data, output_rvv, 28, output_length_rvv);
+    output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, 40, &output_length);
+    base64_decode_rvv(base64_data, output_rvv, 40, output_length_rvv);
     // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
 
     printf("Original: %s\n", base64_data);
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 32; i++)
     {
         printf("%d ", base64_data[i]);
     }
 
     printf("\n\nDecoded:\n");
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 32; i++)
     {
-        printf("%d ", output_scalar[i]);
+        printf("%c", output_scalar[i]);
     }
 
     printf("\nDecoded_rvv:\n");
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 32; i++)
     {
         printf("%c ", output_rvv[i]);
         // printf("%d ", output_rvv[i]);
     }
     printf("\n");
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 32; i++)
     {
         printf("0x%02X ", output_rvv[i]);
         // printf("%d ", output_rvv[i]);
