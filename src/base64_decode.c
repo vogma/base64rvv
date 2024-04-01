@@ -147,10 +147,22 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
 
     vuint32m1_t test = pack_data(data_reg, vlmax_8);
 
-    size_t vlmax_32 = __riscv_vsetvlmax_e32m1();
+    // indexed store?
+
+    // size_t vlmax_32 = __riscv_vsetvlmax_e32m1();
     // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
     // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
-    __riscv_vse32_v_u32m1((uint32_t *)output, test, vlmax_32);
+
+    // uint8_t index[16] = {5, 5, 5, 5, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15};
+    uint8_t index[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
+
+    vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index, vlmax_8);
+
+    vuint8m1_t result = __riscv_vrgather_vv_u8m1(__riscv_vreinterpret_v_u32m1_u8m1(test), index_vector, vlmax_8);
+
+    // __riscv_vsuxei8_v_u8m1(output, index_vector, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
+    // __riscv_vse8_v_u8m1(output, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
+    __riscv_vse8_v_u8m1(output, result, vlmax_8);
 }
 
 int main(void)
@@ -191,7 +203,7 @@ int main(void)
 
     printf("\nDecoded_rvv:\n");
 
-   for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++)
     {
         printf("%c ", output_rvv[i]);
         // printf("%d ", output_rvv[i]);
