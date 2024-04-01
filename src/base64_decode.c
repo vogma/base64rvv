@@ -112,8 +112,27 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
     return offset_reg;
 }
 
-void pack_data(vint8m1_t data, size_t vl)
+vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 {
+    size_t vlmax_32 = __riscv_vsetvlmax_e32m1();
+
+    vuint8m1_t convert = __riscv_vreinterpret_v_i8m1_u8m1(data);
+    vuint32m1_t data_vector = __riscv_vreinterpret_v_u8m1_u32m1(convert);
+
+    vuint32m1_t ca = __riscv_vand_vx_u32m1(data_vector, 0x003f003f, vlmax_32);
+    vuint32m1_t db = __riscv_vand_vx_u32m1(data_vector, 0x3f003f00, vlmax_32);
+
+    ca = __riscv_vsll_vx_u32m1(ca, 6, vlmax_32);
+    db = __riscv_vsrl_vx_u32m1(db, 8, vlmax_32);
+
+    vuint32m1_t t0 = __riscv_vor_vv_u32m1(ca, db, vlmax_32);
+
+    vuint32m1_t t1 = __riscv_vsll_vx_u32m1(t0, 12, vlmax_32);
+    vuint32m1_t t2 = __riscv_vsrl_vx_u32m1(t0, 16, vlmax_32);
+
+    t0 = __riscv_vor_vv_u32m1(t1, t2, vlmax_32);
+
+    return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
 void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, size_t output_length)
@@ -126,11 +145,12 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
 
     data_reg = __riscv_vadd_vv_i8m1(data_reg, offset_reg, vlmax_8);
 
-    pack_data(data_reg, vlmax_8);
+    vuint32m1_t test = pack_data(data_reg, vlmax_8);
 
+    size_t vlmax_32 = __riscv_vsetvlmax_e32m1();
     // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
     // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
-    __riscv_vse8_v_i8m1(output, data_reg, vlmax_8);
+    __riscv_vse32_v_u32m1((uint32_t *)output, test, vlmax_32);
 }
 
 int main(void)
@@ -171,6 +191,12 @@ int main(void)
 
     printf("\nDecoded_rvv:\n");
 
+   for (int i = 0; i < 16; i++)
+    {
+        printf("%c ", output_rvv[i]);
+        // printf("%d ", output_rvv[i]);
+    }
+    printf("\n");
     for (int i = 0; i < 16; i++)
     {
         printf("0x%02X ", output_rvv[i]);
