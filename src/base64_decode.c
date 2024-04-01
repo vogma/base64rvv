@@ -112,22 +112,30 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
     return offset_reg;
 }
 
-void base64_decode_rvv(const unsigned char *data, uint8_t *output, size_t input_length, size_t output_length)
+void pack_data(vint8m1_t data, size_t vl)
+{
+}
+
+void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, size_t output_length)
 {
     size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
 
-    vuint8m1_t data_reg = __riscv_vle8_v_u8m1(data, vlmax_8);
+    vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
 
-    vint8m1_t offset_reg = vector_lookup_naive(__riscv_vreinterpret_v_u8m1_i8m1(data_reg), vlmax_8);
+    vint8m1_t offset_reg = vector_lookup_naive(data_reg, vlmax_8);
 
-       // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
+    data_reg = __riscv_vadd_vv_i8m1(data_reg, offset_reg, vlmax_8);
+
+    pack_data(data_reg, vlmax_8);
+
+    // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
     // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
-    __riscv_vse8_v_i8m1(output, offset_reg, vlmax_8);
+    __riscv_vse8_v_i8m1(output, data_reg, vlmax_8);
 }
 
 int main(void)
 {
-    const unsigned char *base64_data = (unsigned char *)"QUJDREVGR2FiY2RlZmcxMjM0NTY3";
+    const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
     size_t output_length = 0;
     size_t output_length_rvv = 0;
 
@@ -144,7 +152,7 @@ int main(void)
     //     }
     // }
 
-    output_scalar = (uint8_t *)base64_decode(base64_data, 28, &output_length);
+    output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, 28, &output_length);
     base64_decode_rvv(base64_data, output_rvv, 28, output_length_rvv);
     // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
 
@@ -161,11 +169,12 @@ int main(void)
         printf("%d ", output_scalar[i]);
     }
 
-    printf("\nDecoded_rvv:\n", output_rvv);
+    printf("\nDecoded_rvv:\n");
 
     for (int i = 0; i < 16; i++)
     {
-        printf("%d ", output_rvv[i]);
+        printf("0x%02X ", output_rvv[i]);
+        // printf("%d ", output_rvv[i]);
     }
     printf("\n");
 
