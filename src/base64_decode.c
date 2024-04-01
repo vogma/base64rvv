@@ -109,7 +109,7 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
         printf("ERROR!\n");
     }
 
-    return offset_reg;
+    return __riscv_vadd_vv_i8m1(data, offset_reg, vl);
 }
 
 vuint32m1_t pack_data(vint8m1_t data, size_t vl)
@@ -132,7 +132,8 @@ vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 
     t0 = __riscv_vor_vv_u32m1(t1, t2, vlmax_32);
 
-    return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
+    return t0;
+    // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
 void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, size_t output_length)
@@ -141,33 +142,29 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
 
     vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
 
-    vint8m1_t offset_reg = vector_lookup_naive(data_reg, vlmax_8);
-
-    data_reg = __riscv_vadd_vv_i8m1(data_reg, offset_reg, vlmax_8);
+    data_reg = vector_lookup_naive(data_reg, vlmax_8);
 
     vuint32m1_t test = pack_data(data_reg, vlmax_8);
 
-    // indexed store?
-
-    // size_t vlmax_32 = __riscv_vsetvlmax_e32m1();
-    // __riscv_vse8_v_u8m1(output, data_reg, vlmax_8);
-    // __riscv_vse8_v_u8m1_m(mask_az, output, data_reg, vlmax_8);
-
-    // uint8_t index[16] = {5, 5, 5, 5, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15};
     uint8_t index[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
 
     vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index, vlmax_8);
 
+    // rearrange elements in vector
     vuint8m1_t result = __riscv_vrgather_vv_u8m1(__riscv_vreinterpret_v_u32m1_u8m1(test), index_vector, vlmax_8);
+
+    // only store 12 of 16 bytes
+    size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
     // __riscv_vsuxei8_v_u8m1(output, index_vector, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
     // __riscv_vse8_v_u8m1(output, __riscv_vreinterpret_v_u32m1_u8m1(test), vlmax_8);
-    __riscv_vse8_v_u8m1(output, result, vlmax_8);
+    __riscv_vse8_v_u8m1(output, result, vl);
 }
 
 int main(void)
 {
-    const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
+    // const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
+    const char *base64_data = "MTIzNDU2NysvQUJDREVGR0g=";
     size_t output_length = 0;
     size_t output_length_rvv = 0;
 
