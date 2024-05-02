@@ -178,15 +178,43 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
     }
 }
 
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
+{
+    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
+           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
+}
+
+#define N 1024 * 1024 * 32
+// #define N 100
+
+char *setupInputData()
+{
+    char alphabet[26] = "MTIzNDU2NysvQUJDREVGR0hhYm";
+
+    char *inputData = (char *)malloc(sizeof(char) * N);
+
+    for (int i = 0; i < N; i++)
+    {
+        inputData[i] = alphabet[i % 26];
+    }
+
+    return inputData;
+}
+
 int main(void)
 {
+    struct timespec start, end;
+    uint64_t timeElapsed_scalar, timeElapsed_vector;
+
     // const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
-    const char *base64_data = "MTIzNDU2NysvQUJDREVGR0hhYmNkZWZnaGlqa2w=";
+    // const char *base64_data = "MTIzNDU2NysvQUJDREVGR0hhYmNkZWZnaGlqa2w=";
+    char *base64_data = setupInputData();
+
     size_t output_length = 0;
     size_t output_length_rvv = 0;
 
-    int8_t *output_scalar = (int8_t *)malloc(100 * sizeof(uint8_t));
-    int8_t *output_rvv = (int8_t *)malloc(100 * sizeof(uint8_t));
+    int8_t *output_scalar = (int8_t *)malloc(N * sizeof(uint8_t));
+    int8_t *output_rvv = (int8_t *)malloc(N * sizeof(uint8_t));
 
     build_decoding_table();
 
@@ -202,34 +230,48 @@ int main(void)
     base64_decode_rvv(base64_data, output_rvv, 40, output_length_rvv);
     // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
 
-    printf("Original: %s\n", base64_data);
+    // measure scalar code
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, N, &output_length);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_scalar = timespecDiff(&end, &start);
+    printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
 
-    for (int i = 0; i < 32; i++)
-    {
-        printf("%d ", base64_data[i]);
-    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    base64_decode_rvv(base64_data, output_rvv, N, output_length_rvv);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_scalar = timespecDiff(&end, &start);
+    printf("base64_rvv time: %ld\n", timeElapsed_scalar / 1000000);
 
-    printf("\n\nDecoded:\n");
-    for (int i = 0; i < 32; i++)
-    {
-        printf("%c", output_scalar[i]);
-    }
+    // printf("Original: %s\n", base64_data);
 
-    printf("\nDecoded_rvv:\n");
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%d ", base64_data[i]);
+    // }
 
-    for (int i = 0; i < 32; i++)
-    {
-        printf("%c ", output_rvv[i]);
-        // printf("%d ", output_rvv[i]);
-    }
-    printf("\n");
-    for (int i = 0; i < 32; i++)
-    {
-        printf("0x%02X ", output_rvv[i]);
-        // printf("%d ", output_rvv[i]);
-    }
-    printf("\n");
+    // printf("\n\nDecoded:\n");
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%c", output_scalar[i]);
+    // }
 
+    // printf("\nDecoded_rvv:\n");
+
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("%c ", output_rvv[i]);
+    //     // printf("%d ", output_rvv[i]);
+    // }
+    // printf("\n");
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     printf("0x%02X ", output_rvv[i]);
+    //     // printf("%d ", output_rvv[i]);
+    // }
+    // printf("\n");
+
+    free(base64_data);
     free(output_rvv);
     free(output_scalar);
 
