@@ -75,31 +75,44 @@ void base64_cleanup()
     free(decoding_table);
 }
 
+#define CHAR_A 64
+#define CHAR_Z 91
+#define CHAR_a 96
+#define CHAR_z 123
+#define NUM_0 47
+#define NUM_9 58
+
+#define OFFSET_PLUS 19
+#define OFFSET_SLASH 16
+#define OFFSET_09 4
+#define OFFSET_AZ -65
+#define OFFSET_az -71
+
 vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
 {
 
     vint8m1_t offset_reg = __riscv_vmv_v_x_i8m1(0, vl);
 
-    vbool8_t mask_gt_A = __riscv_vmsgt_vx_i8m1_b8(data, 64, vl);
-    vbool8_t mask_lt_Z = __riscv_vmslt_vx_i8m1_b8(data, 91, vl);
+    vbool8_t mask_gt_A = __riscv_vmsgt_vx_i8m1_b8(data, CHAR_A, vl);
+    vbool8_t mask_lt_Z = __riscv_vmslt_vx_i8m1_b8(data, CHAR_Z, vl);
     vbool8_t mask_AZ = __riscv_vmand_mm_b8(mask_gt_A, mask_lt_Z, vl);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -65, mask_AZ, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, OFFSET_AZ, mask_AZ, vl);
 
-    vbool8_t mask_gt_a = __riscv_vmsgt_vx_i8m1_b8(data, 96, vl);
-    vbool8_t mask_lt_z = __riscv_vmslt_vx_i8m1_b8(data, 123, vl);
+    vbool8_t mask_gt_a = __riscv_vmsgt_vx_i8m1_b8(data, CHAR_a, vl);
+    vbool8_t mask_lt_z = __riscv_vmslt_vx_i8m1_b8(data, CHAR_z, vl);
     vbool8_t mask_az = __riscv_vmand_mm_b8(mask_gt_a, mask_lt_z, vl);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, -71, mask_az, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, OFFSET_az, mask_az, vl);
 
-    vbool8_t mask_gt_0 = __riscv_vmsgt_vx_i8m1_b8(data, 47, vl);
-    vbool8_t mask_lt_9 = __riscv_vmslt_vx_i8m1_b8(data, 58, vl);
+    vbool8_t mask_gt_0 = __riscv_vmsgt_vx_i8m1_b8(data, NUM_0, vl);
+    vbool8_t mask_lt_9 = __riscv_vmslt_vx_i8m1_b8(data, NUM_9, vl);
     vbool8_t mask_09 = __riscv_vmand_mm_b8(mask_gt_0, mask_lt_9, vl);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 4, mask_09, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, OFFSET_09, mask_09, vl);
 
     vbool8_t mask_eq_plus = __riscv_vmseq_vx_i8m1_b8(data, '+', vl);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 19, mask_eq_plus, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, OFFSET_PLUS, mask_eq_plus, vl);
 
     vbool8_t mask_eq_slash = __riscv_vmseq_vx_i8m1_b8(data, '/', vl);
-    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, 16, mask_eq_slash, vl);
+    offset_reg = __riscv_vmerge_vxm_i8m1(offset_reg, OFFSET_SLASH, mask_eq_slash, vl);
 
     // if any of the elements of offset_reg is 0, the input contains invalid characters
     int error = __riscv_vfirst_m_b8(__riscv_vmseq_vx_i8m1_b8(offset_reg, 0, vl), vl);
