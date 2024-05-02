@@ -119,7 +119,7 @@ void base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
     size_t input_slice = (vlmax_8 / 4) * 3;
 
     for (; length >= input_slice; length -= input_slice)
-    {
+    { 
 
         vl = __riscv_vsetvl_e8m1(input_slice);
 
@@ -199,11 +199,7 @@ void base64_encode_asm(uint8_t *data, char *output, const int8_t *offsets, const
 int main(void)
 {
 
-    // for (int i = 0; i < 48; i += 3)
-    // {
-    //     printf("%d, %d, %d, %d, ", i + 1, i, i + 2, i + 1);
-    // }
-    // printf("\n");
+    printf("Hello World\n");
 
     struct timespec start, end;
     uint64_t timeElapsed_scalar, timeElapsed_vector;

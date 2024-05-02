@@ -158,7 +158,7 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
         // only store 12 of 16 bytes
         size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
-        __riscv_vse8_v_u8m1(output, result, vl);
+        __riscv_vse8_v_u8m1((uint8_t *)output, result, vl);
 
         data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
