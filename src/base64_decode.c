@@ -201,6 +201,24 @@ char *setupInputData()
     return inputData;
 }
 
+void checkResults(int8_t *output_scalar, int8_t *output_vector, size_t length)
+{
+    size_t error = 0;
+    for (int i = 0; i < length; i++)
+    {
+        if (output_scalar[i] != output_vector[i])
+        {
+            printf("Error at index %d!\n", i);
+            error = 1;
+            break;
+        }
+    }
+    if (!error)
+    {
+        printf("No Errors\n");
+    }
+}
+
 int main(void)
 {
     struct timespec start, end;
@@ -242,6 +260,8 @@ int main(void)
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     timeElapsed_scalar = timespecDiff(&end, &start);
     printf("base64_rvv time: %ld\n", timeElapsed_scalar / 1000000);
+
+    checkResults(output_scalar, output_rvv, (N / 4) * 3);
 
     // printf("Original: %s\n", base64_data);
 
