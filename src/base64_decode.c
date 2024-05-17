@@ -84,6 +84,48 @@ void base64_cleanup()
 #define OFFSET_AZ -65
 #define OFFSET_az -71
 
+vint8m1_t vector_lookup_vrgather(vint8m1_t data, size_t vl)
+{
+    const int8_t LOWER_INVALID = 1;
+    const int8_t UPPER_INVALID = 1;
+
+    const int8_t lower_bound_lut[16] =
+        {LOWER_INVALID, LOWER_INVALID, 0x2B, 0x30,
+         0x41, 0x50, 0x61, 0x70,
+         LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID,
+         LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID};
+
+    const int8_t upper_bound_lut[16] =
+        {
+            UPPER_INVALID, UPPER_INVALID, 0x2b, 0x39,
+            0x4f, 0x5a, 0x6f, 0x7a,
+            UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID,
+            UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID};
+
+    const int8_t shift_lut[16] = {
+        /* 0 */ 0x00, /* 1 */ 0x00, /* 2 */ 0x3e - 0x2b, /* 3 */ 0x34 - 0x30,
+        /* 4 */ 0x00 - 0x41, /* 5 */ 0x0f - 0x50, /* 6 */ 0x1a - 0x61, /* 7 */ 0x29 - 0x70,
+        /* 8 */ 0x00, /* 9 */ 0x00, /* a */ 0x00, /* b */ 0x00,
+        /* c */ 0x00, /* d */ 0x00, /* e */ 0x00, /* f */ 0x00};
+
+    size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
+
+    vint8m1_t vec_lower_lut = __riscv_vle8_v_i8m1(lower_bound_lut, vlmax_8);
+    vint8m1_t vec_upper_lut = __riscv_vle8_v_i8m1(upper_bound_lut, vlmax_8);
+    vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
+
+    // extract higher nibble from 8-bit data
+    vuint8m1_t higher_nibble = __riscv_vsrl_vx_u8m1(__riscv_vreinterpret_v_i8m1_u8m1(data), 4, vlmax_8);
+
+    vint8m1_t upper_bound = __riscv_vrgather_vv_i8m1(vec_upper_lut, higher_nibble, vlmax_8);
+    vint8m1_t lower_bound = __riscv_vrgather_vv_i8m1(vec_lower_lut, higher_nibble, vlmax_8);
+
+    vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
+
+
+    return shift;
+}
+
 vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
 {
 
@@ -161,7 +203,8 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
     {
         vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
 
-        data_reg = vector_lookup_naive(data_reg, vlmax_8);
+        // data_reg = vector_lookup_naive(data_reg, vlmax_8);
+        data_reg = vector_lookup_vrgather(data_reg, vlmax_8);
 
         vuint32m1_t packed_data = pack_data(data_reg, vlmax_8);
 
@@ -297,6 +340,24 @@ int main(void)
         // printf("%d ", output_rvv[i]);
     }
     printf("\n");
+
+    for (int i = 0; i < output_length_rvv; i++)
+    {
+        printf("0x%02X ", output_rvv[i]);
+        // printf("%d ", output_rvv[i]);
+    }
+    printf("\n");
+
+
+    for (int i = 0; i < output_length_rvv; i++)
+    {
+        printf("%C ", output_rvv[i]);
+        // printf("%d ", output_rvv[i]);
+    }
+    printf("\n");
+
+
+
     // printf("\noutput_length: %zu %zu \n", output_length, output_length_rvv);
 
     // free(base64_data);
