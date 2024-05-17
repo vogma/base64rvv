@@ -84,35 +84,36 @@ void base64_cleanup()
 #define OFFSET_AZ -65
 #define OFFSET_az -71
 
+const int8_t LOWER_INVALID = 1;
+const int8_t UPPER_INVALID = 1;
+
+const int8_t lower_bound_lut[16] =
+    {LOWER_INVALID, LOWER_INVALID, 0x2B, 0x30,
+     0x41, 0x50, 0x61, 0x70,
+     LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID,
+     LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID};
+
+const int8_t upper_bound_lut[16] =
+    {
+        UPPER_INVALID, UPPER_INVALID, 0x2b, 0x39,
+        0x4f, 0x5a, 0x6f, 0x7a,
+        UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID,
+        UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID};
+
+const int8_t shift_lut[16] = {
+    /* 0 */ 0x00, /* 1 */ 0x00, /* 2 */ 0x3e - 0x2b, /* 3 */ 0x34 - 0x30,
+    /* 4 */ 0x00 - 0x41, /* 5 */ 0x0f - 0x50, /* 6 */ 0x1a - 0x61, /* 7 */ 0x29 - 0x70,
+    /* 8 */ 0x00, /* 9 */ 0x00, /* a */ 0x00, /* b */ 0x00,
+    /* c */ 0x00, /* d */ 0x00, /* e */ 0x00, /* f */ 0x00};
+
 vint8m1_t vector_lookup_vrgather(vint8m1_t data, size_t vl)
 {
-    const int8_t LOWER_INVALID = 1;
-    const int8_t UPPER_INVALID = 1;
-
-    const int8_t lower_bound_lut[16] =
-        {LOWER_INVALID, LOWER_INVALID, 0x2B, 0x30,
-         0x41, 0x50, 0x61, 0x70,
-         LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID,
-         LOWER_INVALID, LOWER_INVALID, LOWER_INVALID, LOWER_INVALID};
-
-    const int8_t upper_bound_lut[16] =
-        {
-            UPPER_INVALID, UPPER_INVALID, 0x2b, 0x39,
-            0x4f, 0x5a, 0x6f, 0x7a,
-            UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID,
-            UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID};
-
-    const int8_t shift_lut[16] = {
-        /* 0 */ 0x00, /* 1 */ 0x00, /* 2 */ 0x3e - 0x2b, /* 3 */ 0x34 - 0x30,
-        /* 4 */ 0x00 - 0x41, /* 5 */ 0x0f - 0x50, /* 6 */ 0x1a - 0x61, /* 7 */ 0x29 - 0x70,
-        /* 8 */ 0x00, /* 9 */ 0x00, /* a */ 0x00, /* b */ 0x00,
-        /* c */ 0x00, /* d */ 0x00, /* e */ 0x00, /* f */ 0x00};
 
     size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
 
-    vint8m1_t vec_lower_lut = __riscv_vle8_v_i8m1(lower_bound_lut, vlmax_8);
-    vint8m1_t vec_upper_lut = __riscv_vle8_v_i8m1(upper_bound_lut, vlmax_8);
-    vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
+    const vint8m1_t vec_lower_lut = __riscv_vle8_v_i8m1(lower_bound_lut, vlmax_8);
+    const vint8m1_t vec_upper_lut = __riscv_vle8_v_i8m1(upper_bound_lut, vlmax_8);
+    const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
 
     // extract higher nibble from 8-bit data
     vuint8m1_t higher_nibble = __riscv_vsrl_vx_u8m1(__riscv_vreinterpret_v_i8m1_u8m1(data), 4, vlmax_8);
@@ -122,8 +123,8 @@ vint8m1_t vector_lookup_vrgather(vint8m1_t data, size_t vl)
 
     vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
 
-
-    return shift;
+    return __riscv_vadd_vv_i8m1(data, shift, vl);
+    // return shift;
 }
 
 vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
@@ -159,8 +160,8 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
     {
         printf("ERROR!\n");
     }
-    return offset_reg;
-    // return __riscv_vadd_vv_i8m1(data, offset_reg, vl);
+    // return offset_reg;
+    return __riscv_vadd_vv_i8m1(data, offset_reg, vl);
 }
 
 vint8m1_t vector_lookup_iteration(vint8m1_t data, size_t vl)
@@ -187,8 +188,8 @@ vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 
     t0 = __riscv_vor_vv_u32m1(t1, t2, vlmax_32);
 
-    return t0;
-    // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
+    // return t0;
+    return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
 const uint8_t index_decode[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
@@ -216,7 +217,8 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
         // only store 12 of 16 bytes
         size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
-        __riscv_vse8_v_i8m1(output, data_reg, vl);
+        // __riscv_vse8_v_i8m1(output, result, vl);
+        __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result), vl);
 
         data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
@@ -348,15 +350,12 @@ int main(void)
     }
     printf("\n");
 
-
     for (int i = 0; i < output_length_rvv; i++)
     {
         printf("%C ", output_rvv[i]);
         // printf("%d ", output_rvv[i]);
     }
     printf("\n");
-
-
 
     // printf("\noutput_length: %zu %zu \n", output_length, output_length_rvv);
 
