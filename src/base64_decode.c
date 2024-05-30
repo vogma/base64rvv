@@ -164,9 +164,9 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
     return __riscv_vadd_vv_i8m1(data, offset_reg, vl);
 }
 
-vint8m1_t vector_lookup_iteration(vint8m1_t data, size_t vl)
-{
-}
+// vint8m1_t vector_lookup_iteration(vint8m1_t data, size_t vl)
+// {
+// }
 
 vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 {
@@ -188,8 +188,8 @@ vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 
     t0 = __riscv_vor_vv_u32m1(t1, t2, vlmax_32);
 
-    // return t0;
-    return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
+    return t0;
+    // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
 const uint8_t index_decode[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
@@ -228,8 +228,8 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, si
     *output_length = output_length_int;
 }
 
-// #define N 1024 * 1024 * 32
-#define N 100
+#define N 1024 * 1024 * 32
+// #define N 100
 
 char *setupInputData()
 {
@@ -269,10 +269,10 @@ int main(void)
     uint64_t timeElapsed_scalar, timeElapsed_vector;
 
     // const char *base64_data = "QUJDREVGR2FiY2RlZmcxMjM0NTY3";
-    const char *base64_data = "MTIzNDU2NysvQUJDREVGR0hhYmNkZWZnaGlqa2w=";
+    // const char *base64_data = "MTIzNDU2NysvQUJDREVGR0hhYmNkZWZnaGlqa2w=";
 
     const size_t data_length = 40;
-    // char *base64_data = setupInputData();
+    char *base64_data = setupInputData();
 
     size_t output_length = 0;
     size_t output_length_rvv = 0;
@@ -291,23 +291,25 @@ int main(void)
     // }
 
     output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, data_length, &output_length);
-    base64_decode_rvv(base64_data, output_rvv, data_length, &output_length_rvv);
     // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
 
     // measure scalar code
-    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-    // output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, N, &output_length);
-    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    // timeElapsed_scalar = timespecDiff(&end, &start);
-    // printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, N, &output_length);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_scalar = timespecDiff(&end, &start);
+    printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
 
-    // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-    // base64_decode_rvv(base64_data, output_rvv, N, output_length_rvv);
-    // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    // timeElapsed_scalar = timespecDiff(&end, &start);
-    // printf("base64_rvv time: %ld\n", timeElapsed_scalar / 1000000);
 
-    // checkResults(output_scalar, output_rvv, (N / 4) * 3);
+    base64_decode_rvv(base64_data, output_rvv, data_length, &output_length_rvv);
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    base64_decode_rvv(base64_data, output_rvv, N, &output_length_rvv);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_scalar = timespecDiff(&end, &start);
+    printf("base64_rvv time: %ld\n", timeElapsed_scalar / 1000000);
+
+    checkResults(output_scalar, output_rvv, (N / 4) * 3);
 
     // printf("Original: %s\n", base64_data);
 
@@ -336,26 +338,26 @@ int main(void)
     //     // printf("%d ", output_rvv[i]);
     // }
     // printf("\n");
-    for (int i = 0; i < output_length_rvv; i++)
-    {
-        printf("%d ", output_rvv[i]);
-        // printf("%d ", output_rvv[i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < output_length_rvv; i++)
+    // {
+    //     printf("%d ", output_rvv[i]);
+    //     // printf("%d ", output_rvv[i]);
+    // }
+    // printf("\n");
 
-    for (int i = 0; i < output_length_rvv; i++)
-    {
-        printf("0x%02X ", output_rvv[i]);
-        // printf("%d ", output_rvv[i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < output_length_rvv; i++)
+    // {
+    //     printf("0x%02X ", output_rvv[i]);
+    //     // printf("%d ", output_rvv[i]);
+    // }
+    // printf("\n");
 
-    for (int i = 0; i < output_length_rvv; i++)
-    {
-        printf("%C ", output_rvv[i]);
-        // printf("%d ", output_rvv[i]);
-    }
-    printf("\n");
+    // for (int i = 0; i < output_length_rvv; i++)
+    // {
+    //     printf("%C ", output_rvv[i]);
+    //     // printf("%d ", output_rvv[i]);
+    // }
+    // printf("\n");
 
     // printf("\noutput_length: %zu %zu \n", output_length, output_length_rvv);
 
