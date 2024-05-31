@@ -210,10 +210,8 @@ int main(void)
     timeElapsed_scalar = timespecDiff(&end, &start);
     printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
 
-    int length = N;
-    // base64_encode((uint8_t *)inputData, output_vector, N);
-    base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
-    length = N;
+    base64_encode((uint8_t *)inputData, output_vector, N);
+    // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
 
     // measure vector code
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
