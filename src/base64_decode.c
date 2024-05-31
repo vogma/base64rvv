@@ -121,6 +121,21 @@ vint8m1_t vector_lookup_vrgather(vint8m1_t data, size_t vl)
     vint8m1_t upper_bound = __riscv_vrgather_vv_i8m1(vec_upper_lut, higher_nibble, vlmax_8);
     vint8m1_t lower_bound = __riscv_vrgather_vv_i8m1(vec_lower_lut, higher_nibble, vlmax_8);
 
+    vbool8_t lower = __riscv_vmslt_vv_i8m1_b8(data, lower_bound, vlmax_8);
+    vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
+    vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data, 0x2f, vlmax_8);
+
+    vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
+    vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
+
+    int error = __riscv_vfirst_m_b8(outside, vlmax_8);
+
+    if (error != NO_ERROR)
+    {
+        printf("ERROR!\n");
+    }
+
+
     vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
 
     return __riscv_vadd_vv_i8m1(data, shift, vl);
@@ -163,10 +178,6 @@ vint8m1_t vector_lookup_naive(vint8m1_t data, size_t vl)
     // return offset_reg;
     return __riscv_vadd_vv_i8m1(data, offset_reg, vl);
 }
-
-// vint8m1_t vector_lookup_iteration(vint8m1_t data, size_t vl)
-// {
-// }
 
 vuint32m1_t pack_data(vint8m1_t data, size_t vl)
 {
@@ -299,7 +310,6 @@ int main(void)
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     timeElapsed_scalar = timespecDiff(&end, &start);
     printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1000000);
-
 
     base64_decode_rvv(base64_data, output_rvv, data_length, &output_length_rvv);
 
