@@ -8,10 +8,10 @@ base64: Makefile
 	$(RISCV)/riscv64-unknown-linux-gnu-gcc $(FLAGS) $(SRC)/$@.c $(SRC)/$@.S -o $(BUILD)/$@
 
 base64_decode.o: Makefile
-	clang $(CLANG_FLAGS) $(SRC)/base64_decode.c -o $(BUILD)/$@ -I$(INCLUDE)
+	clang $(CLANG_FLAGS) $(SRC)/base64_decode.c -o $(BUILD)/$@ -I$(INCLUDE) -Ilibb64/include
 
 base64_decode: base64_decode.o Makefile
-	$(RISCV)/riscv64-unknown-linux-gnu-gcc $(FLAGS) $(BUILD)/$@.o -I$(INCLUDE) -o $(BUILD)/$@
+	$(RISCV)/riscv64-unknown-linux-gnu-gcc $(FLAGS) $(BUILD)/$@.o -Llibb64 -lb64 -o $(BUILD)/$@
 
 base64_decode_gcc: Makefile
 	$(RISCV)/riscv64-unknown-linux-gnu-gcc $(FLAGS) $(SRC)/base64_decode.c -o $(BUILD)/base64_decode

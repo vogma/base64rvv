@@ -3,6 +3,8 @@
 #include "stdlib.h"
 #include "riscv_vector.h"
 #include <time.h>
+#include <b64/cencode.h>
+#include <b64/cdecode.h>
 
 int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
 {
