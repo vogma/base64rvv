@@ -367,6 +367,7 @@ void checkResults(int8_t *output_scalar, int8_t *output_vector, size_t length)
     }
 }
 
+
 int main(void)
 {
     struct timespec start, end;

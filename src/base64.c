@@ -99,7 +99,6 @@ vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuin
     return __riscv_vor_vv_u32m1(__riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_ac), __riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_bd), vl);
 }
 
-
 void base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
 {
     size_t vl;
@@ -115,7 +114,7 @@ void base64_encode(uint8_t *restrict input, uint8_t *output, size_t length)
     size_t input_slice = (vlmax_8 / 4) * 3;
 
     for (; length >= input_slice; length -= input_slice)
-    { 
+    {
 
         vl = __riscv_vsetvl_e8m1(input_slice);
 
