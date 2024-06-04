@@ -1,47 +1,9 @@
 #include <libb64rvv.h>
-
-void checkResults(int8_t *output_scalar, int8_t *output_vector, size_t length)
-{
-    size_t error = 0;
-    for (int i = 0; i < length; i++)
-    {
-        if (output_scalar[i] != output_vector[i])
-        {
-            printf("Error at index %d! scalar is 0x%02X, vector is 0x%02X \n", i, output_scalar[i], output_vector[i]);
-            error = 1;
-            break;
-        }
-    }
-    if (!error)
-    {
-        printf("No Errors\n");
-    }
-}
-
-int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
-{
-    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
-           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
-}
-
-char *setupInputData(int N)
-{
-    // char alphabet[26] = "MTIzNDU2NysvQUJDREVGR0g=";
-    char alphabet[900] = "CgpIaSBldmVyeW9uZSwgaSByZWNlbnRseSBzdGFydGVkIHN0dWR5aW5nIHRoZSBSSVNDLVYgYXJjaGl0ZWN0dXJlLCBhbmQgbWFuYWdlZCB0byBtYWtlIG15IG93biAzMmJpdCB2ZXJzaW9uIGluIGEgZ2FtZSBjYWxsZWQgVHVyaW5nIGNvbXBsZXRlLiBUaGUgc3lzdGVtIGlzIGFibGUgdG8gZXhlY3V0ZSBldmVyeSBpbnN0cnVjdGlvbiBvZiB0aGUgYmFzZSBtb2R1bGVzLCBub3cgdGhhdCBpIHdhbnQgdG8gdHJ5IGFuZCBhZGQgc3VwcG9ydCBmb3IgZmxvYXRpbmcgcG9pbnQgbnVtYmVycywgaSdtIHN0dWNrIHdpdGggYSByZWFsbHkgc3R1cGlkIHF1ZXN0aW9uPwoKSSBhZGRlZCAzMiBzZXBhcmF0ZSByZWdpc3RlcnMgZm9yIHN0b3JpbmcgZmxvYXRzLCBhbmQgYW4gZW5jb2RlciBmb3IgdGhlIElFRUUtNzU0IGZvcm1hdC4gYnV0IGlmIGkgdXNlIHNvbWV0aGluZyBsaWtlCgpsaSB0MCwgNjU0MzIxCgpmY3Z0LnMudyBmdDAsIHQwCgpmdDAgd2lsbCBiZSBzZXQgdG8gNjU0MzIxLjAgKElFRUUgZW5jb2RlZCkKCkhlcmUgY29tZXMgdGhlIHN0dXBpZCBxdWVzdGlvbi4uLiBob3cgZG8gaSBwdXQgc3R1ZmYgYWZ0ZXIgdGhlIGRvdD8gZXZlcnkgbnVtYmVyIGkgY29udmVydCB3aWxsIGJlIGp1c3Qgbi4wCgpob3cgY2FuIGkgc2V0IGZ0MCB0byBzb21ldGhpbmcgbGlrZSAwLjYyIG9yIDEuND8=";
-
-    char *inputData = (char *)malloc(sizeof(char) * N);
-
-    for (int i = 0; i < N; i++)
-    {
-        inputData[i] = alphabet[i % 900];
-    }
-
-    return inputData;
-}
+#include <base64.h>
 
 #define RUN_SIZE 1
 
-int main(void)
+void run_base64_decode()
 {
     struct timespec start, end;
     uint64_t timeElapsed_scalar;
@@ -59,7 +21,7 @@ int main(void)
 
         printf("running with %d bytes\n", N);
 
-        char *base64_data = setupInputData(N);
+        char *base64_data = setupDecodingData(N);
 
         // input
         for (int i = 0; i < 70; i++)
@@ -96,7 +58,7 @@ int main(void)
 
         printf("--------------------\n");
 
-        checkResults(output_scalar, output_rvv, (N / 4) * 3);
+        checkResults((uint8_t *)output_scalar, (uint8_t *)output_rvv, (N / 4) * 3);
 
         free(base64_data);
         free(output_rvv);
@@ -104,5 +66,69 @@ int main(void)
     }
 
     base64_cleanup();
+}
+
+#define N 900
+
+void run_base64_encode(void)
+{
+    struct timespec start, end;
+    uint64_t timeElapsed_scalar, timeElapsed_vector;
+
+    char *inputData = setupEncodingData(N);
+
+    int encode_length = Base64encode_len(N * sizeof(char));
+
+    uint8_t *output_scalar = (uint8_t *)malloc(sizeof(uint8_t) * encode_length);
+    uint8_t *output_vector = (uint8_t *)malloc(sizeof(uint8_t) * encode_length);
+
+    Base64encode((char *)output_scalar, inputData, N);
+
+    // measure scalar code
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    Base64encode((char *)output_scalar, inputData, N);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_scalar = timespecDiff(&end, &start);
+    printf("base64_scalar time: %ld\n", timeElapsed_scalar / 1);
+
+    base64_encode_rvv((uint8_t *)inputData, output_vector, N);
+    // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
+
+    // measure vector code
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    base64_encode_rvv((uint8_t *)inputData, output_vector, N);
+    // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    timeElapsed_vector = timespecDiff(&end, &start);
+    printf("base64_vector time: %ld\n", timeElapsed_vector / 1);
+
+    // float speedup = ((float)timeElapsed_scalar / (float)timeElapsed_vector);
+    // printf("speedup %.02f %%\n", speedup * 100);
+
+    for (int i = 0; i < 70; i++)
+    {
+        printf("%c", output_scalar[i]);
+    }
+    printf("\n");
+
+    for (int i = 0; i < 70; i++)
+    {
+        printf("%c", output_vector[i]);
+    }
+    printf("\n");
+
+    checkResults(output_scalar, output_vector, encode_length);
+
+    free(inputData);
+    free(output_scalar);
+    free(output_vector);
+}
+
+int main(void)
+{
+    run_base64_decode();
+    printf("\n\n----------------------\n\n");
+    run_base64_encode();
+
     return 0;
 }

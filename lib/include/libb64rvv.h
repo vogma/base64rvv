@@ -15,6 +15,8 @@ unsigned char *base64_decode(const unsigned char *data, size_t input_length, siz
 void base64_encode_rvv(uint8_t *restrict input, uint8_t *output, size_t length);
 void base64_decode_rvv(const char *data, int8_t *output, size_t input_length, size_t *output_length);
 
+int Base64encode_len(int len);
+
 void build_decoding_table();
 void base64_cleanup();
 
