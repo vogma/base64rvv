@@ -14,6 +14,8 @@ void run_base64_decode()
     // const int a[run_size] = {2048, 4096, 8192, 1000000, 2000000, 4000000, 8000000, 16000000, 32000000, 64000000};
     const int a[RUN_SIZE] = {900};
 
+    // build_decoding_table();
+
     for (int i = 0; i < RUN_SIZE; i++)
     {
 
@@ -35,8 +37,6 @@ void run_base64_decode()
 
         int8_t *output_scalar = (int8_t *)malloc(N * sizeof(uint8_t));
         int8_t *output_rvv = (int8_t *)malloc(N * sizeof(uint8_t));
-
-        build_decoding_table();
 
         output_scalar = (int8_t *)base64_decode((const unsigned char *)base64_data, N, &output_length);
         // unsigned char *decoded = base64_decode(base64_data, 28, &output_length);
@@ -65,7 +65,7 @@ void run_base64_decode()
         free(output_scalar);
     }
 
-    base64_cleanup();
+    // base64_cleanup();
 }
 
 #define N 900
