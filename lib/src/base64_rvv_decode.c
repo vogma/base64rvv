@@ -6,6 +6,7 @@ static const int8_t decoding_table_static[256] = {0x00, 0x00, 0x00, 0x00, 0x00, 
 
 unsigned char *base64_decode(const unsigned char *data,
                              size_t input_length,
+                             unsigned char *output_data,
                              size_t *output_length)
 {
     if (input_length % 4 != 0)
@@ -126,22 +127,22 @@ vint8m1_t __attribute__((always_inline)) inline vector_lookup_vrgather(vint8m1_t
     // extract higher nibble from 8-bit data
     vuint8m1_t higher_nibble = __riscv_vsrl_vx_u8m1(__riscv_vreinterpret_v_i8m1_u8m1(data), 4, vlmax_8);
 
-    vint8m1_t upper_bound = __riscv_vrgather_vv_i8m1(vec_upper_lut, higher_nibble, vlmax_8);
-    vint8m1_t lower_bound = __riscv_vrgather_vv_i8m1(vec_lower_lut, higher_nibble, vlmax_8);
+    // vint8m1_t upper_bound = __riscv_vrgather_vv_i8m1(vec_upper_lut, higher_nibble, vlmax_8);
+    // vint8m1_t lower_bound = __riscv_vrgather_vv_i8m1(vec_lower_lut, higher_nibble, vlmax_8);
 
-    vbool8_t lower = __riscv_vmslt_vv_i8m1_b8(data, lower_bound, vlmax_8);
-    vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
-    vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data, 0x2f, vlmax_8);
+    // vbool8_t lower = __riscv_vmslt_vv_i8m1_b8(data, lower_bound, vlmax_8);
+    // vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
+    // vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data, 0x2f, vlmax_8);
 
-    vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
-    vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
+    // vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
+    // vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
 
-    int error = __riscv_vfirst_m_b8(outside, vlmax_8);
+    // int error = __riscv_vfirst_m_b8(outside, vlmax_8);
 
-    if (error != NO_ERROR)
-    {
-        printf("ERROR!\n");
-    }
+    // if (error != NO_ERROR)
+    // {
+    //     printf("ERROR!\n");
+    // }
 
     vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
 

@@ -39,7 +39,7 @@ void checkResults(uint8_t *output_scalar, uint8_t *output_vector, size_t length)
     {
         if (output_scalar[i] != output_vector[i])
         {
-            printf("Error at index %d!\n", i);
+            printf("Error at index %d! vector is 0x%02X scalar is 0x%02X\n", i, output_vector[i], output_scalar[i]);
             error = 1;
             break;
         }
