@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(base64rvv VERSION 0.1 LANGUAGES C)
 
-# Set the RISC-V toolchain
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR riscv)
+# Check if the current system processor matches RISC-V
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "riscv")
+    # Use native compiler if on a RISC-V platform
+    message(STATUS "Using native compiler for RISC-V platform.")
+    set(CMAKE_C_COMPILER gcc)
+else()
+    # Set the RISC-V toolchain for non-RISC-V platforms
+    message(STATUS "Using cross-compiler for non-RISC-V platform.")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_SYSTEM_PROCESSOR riscv)
+    set(CMAKE_C_COMPILER riscv-unknown-linux-gnu-gcc)
+endif()
 
 # Specify the cross compiler
 set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
