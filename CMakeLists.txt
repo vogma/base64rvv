@@ -8,6 +8,8 @@ set(CMAKE_SYSTEM_PROCESSOR riscv)
 # Specify the cross compiler
 set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
 
+add_compile_options(-march=rv64gcvzba -mabi=lp64d -O3 -static -Wall -g)
+
 # Add include directories
 include_directories(${PROJECT_SOURCE_DIR}/lib/include)
 

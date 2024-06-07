@@ -1,6 +1,5 @@
 #include <libb64rvv.h>
 #include <base64.h>
-#include "b64/cencode.h"
 
 #define RUN_SIZE 22
 
