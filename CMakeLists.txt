@@ -11,11 +11,8 @@ else()
     message(STATUS "Using cross-compiler for non-RISC-V platform.")
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR riscv)
-    set(CMAKE_C_COMPILER riscv-unknown-linux-gnu-gcc)
+    set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
 endif()
-
-# Specify the cross compiler
-set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
 
 add_compile_options(-march=rv64gcvzba -mabi=lp64d -O3 -static -Wall -g)
 
