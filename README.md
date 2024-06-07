@@ -1,6 +1,6 @@
 # Vectorized Base64 Encoder/Decoder for RISC-V RVV
 
-This repository contains a high-performance implementation of the Base64 encoding and decoding algorithms, optimized for the RISC-V architecture with the RVV (RISC-V Vector Extension). The implementation utilizes both C and intrinsic assembly functions to leverage the vector processing capabilities of the RVV extension.
+This repository contains a implementation of the Base64 encoding and decoding algorithms, optimized for the RISC-V architecture with the RVV (RISC-V Vector Extension). The implementation utilizes both C and intrinsic assembly functions to leverage the vector processing capabilities of the RVV extension.
 
 ## About Base64
 
