@@ -1,0 +1,3 @@
+[submodule "libs/cppcodec"]
+	path = libs/cppcodec
+	url = https://github.com/tplgy/cppcodec.git
