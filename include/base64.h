@@ -2,16 +2,20 @@
 #include "stdint.h"
 #include "stdlib.h"
 #include <time.h>
+#include <libb64rvv.h>
 
-char *setupEncodingData(size_t size)
+
+uint8_t *setupEncodingData(size_t size)
 {
+
+    srand(time(NULL));
     char alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    char *inputData = (char *)malloc(sizeof(char) * size);
+    uint8_t *inputData = (uint8_t *)malloc(sizeof(uint8_t) * size);
 
     for (int i = 0; i < size; i++)
     {
-        inputData[i] = alphabet[i % 26];
+        inputData[i] = rand() % (255 + 1 - 0) + 0;
     }
 
     return inputData;
@@ -26,7 +30,7 @@ char *setupDecodingData(size_t size)
 
     for (int i = 0; i < size; i++)
     {
-        inputData[i] = alphabet[i % 900];
+        inputData[i] = alphabet[i % 26];
     }
 
     return inputData;
