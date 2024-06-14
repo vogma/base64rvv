@@ -5,7 +5,7 @@ LINK_LIB64=-Llibb64 -lb64
 LINK_LIB_RVV=-Llib/build -lb64rvv
 FLAGS=-march=rv64gcvzba -mabi=lp64d -O3 -static -Wall -g
 
-VLEN=256
+VLEN=128
 SIM=qemu-riscv64
 QEMU_FLAGS=-cpu rv64,v=on,vext_spec=v1.0,vlen=$(VLEN),rvv_ta_all_1s=on,rvv_ma_all_1s=on,zfh=true,x-zvfh=true
 
@@ -31,7 +31,13 @@ base64.o: $(SRC)/base64.c
 base64: $(LIBARY) base64.o
 	$(RISCV)/$(CC) $(FLAGS) $(BUILD)/base64.o -o $(BUILD)/$@ $(LINK_LIB_RVV)
 
-simulation: base64
+horizontal_vector_sum: 
+	$(CC) $(FLAGS) $(SRC)/$@.c -o $(BUILD)/$@
+
+simulation: horizontal_vector_sum
+	$(SIM) $(QEMU_FLAGS) $(BUILD)/$<
+
+simulation_base64: base64
 	$(SIM) $(QEMU_FLAGS) $(BUILD)/$<
 
 clean: Makefile
