@@ -9,7 +9,6 @@ uint8_t *setupEncodingData(size_t size)
 {
 
     srand(time(NULL));
-    char alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     uint8_t *inputData = (uint8_t *)malloc(sizeof(uint8_t) * size);
 
