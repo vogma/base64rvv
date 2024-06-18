@@ -52,7 +52,8 @@ vuint16m2_t loadIndex()
     // return __riscv_vle8_v_u8m1(gather_index, vl);
 }
 
-const int8_t offsets[16] = {65, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 71, 0, 0};
+const int8_t offsets[16] = {71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 65, 0, 0};
+// const int8_t offsets[16] = {65, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 71, 0, 0};
 
 vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vuint8m1_t vec_indices, vint8m1_t offset_vec, size_t vl)
 {
@@ -61,16 +62,20 @@ vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vui
     vbool8_t ge_26_mask = __riscv_vmsgtu_vx_u8m1_b8(vec_indices, 25, vl);
     vbool8_t le_51_mask = __riscv_vmsleu_vx_u8m1_b8(vec_indices, 51, vl);
 
+    vbool8_t vec_lt_26 = __riscv_vmsltu_vx_u8m1_b8(vec_indices, 26, vl);
+
+    const vuint8m1_t vec_lookup = __riscv_vadd_vx_u8m1_mu(vec_lt_26, result, result, 13, vl);
+
     vbool8_t mask = __riscv_vmand_mm_b8(ge_26_mask, le_51_mask, vl);
 
     result = __riscv_vmerge_vxm_u8m1(result, 13, mask, vl);
 
-    offset_vec = __riscv_vrgather_vv_i8m1(offset_vec, result, vl);
+    offset_vec = __riscv_vrgather_vv_i8m1(offset_vec, vec_lookup, vl);
 
     vint8m1_t ascii_vec = __riscv_vadd_vv_i8m1(__riscv_vreinterpret_v_u8m1_i8m1(vec_indices), offset_vec, vl);
 
     return __riscv_vreinterpret_v_i8m1_u8m1(ascii_vec);
-    // return vec_indices;
+    // return vec_lookup;
 }
 
 vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuint8m1_t data, size_t vl)
