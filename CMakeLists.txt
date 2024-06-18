@@ -20,7 +20,7 @@ add_compile_options(-march=rv64gcvzba -mabi=lp64d -O3 -static -Wall -g)
 include_directories(${PROJECT_SOURCE_DIR}/lib/include)
 
 # Specify source files
-set(SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/src/base64_rvv_encode.c ${PROJECT_SOURCE_DIR}/lib/src/base64_rvv_decode.c ${PROJECT_SOURCE_DIR}/lib/src/picobase64.c)
+set(SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/src/base64_rvv_encode.c ${PROJECT_SOURCE_DIR}/lib/src/base64_rvv_decode.c)
 
 # Define the static library to be built with the specified source files
 add_library(b64rvv STATIC ${SOURCE_FILES})
