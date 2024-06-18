@@ -72,8 +72,8 @@ vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vui
 vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuint8m1_t data, size_t vl)
 {
 
-    vuint32m1_t const_vec_ac = __riscv_vmv_v_x_u32m1(0x04000040, vl);
-    vuint32m1_t const_vec_bd = __riscv_vmv_v_x_u32m1(0x01000010, vl);
+    const vuint32m1_t const_vec_ac = __riscv_vmv_v_x_u32m1(0x04000040, vl);
+    const vuint32m1_t const_vec_bd = __riscv_vmv_v_x_u32m1(0x01000010, vl);
 
     vuint32m1_t input32 = __riscv_vreinterpret_v_u8m1_u32m1(data);
 
