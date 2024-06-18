@@ -1,5 +1,9 @@
 #ifndef LIBB64RVV_H
-#define LIBCALC_H
+#define LIBB64RVV_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "stdio.h"
 #include "stdint.h"
@@ -19,7 +23,7 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length);
 
 int Base64encode_len(int len);
 
-// void build_decoding_table();
-// void base64_cleanup();
-
+#ifdef __cplusplus
+}
+#endif
 #endif
