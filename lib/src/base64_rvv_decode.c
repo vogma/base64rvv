@@ -129,8 +129,6 @@ const int8_t shift_lut[16] = {
     /* 8 */ 0x00, /* 9 */ 0x00, /* a */ 0x00, /* b */ 0x00,
     /* c */ 0x00, /* d */ 0x00, /* e */ 0x00, /* f */ 0x00};
 
-static const char *lookup = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
 vint8m2_t vector_lookup_vrgather_m2(vint8m2_t data, size_t vl)
 {
 
