@@ -45,13 +45,6 @@ int Base64encode(char *encoded, const char *string, int len)
 
 const uint8_t gather_index_lmul4[64] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46};
 
-// vuint16m2_t loadIndex()
-// {
-//     size_t vl = __riscv_vsetvlmax_e16m2();
-//     return __riscv_vle16_v_u16m2(gather_index_lmul4, vl);
-//     // return __riscv_vle8_v_u8m1(gather_index, vl);
-// }
-
 const int8_t offsets[16] = {71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 65, 0, 0};
 
 vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vuint8m1_t vec_indices, vint8m1_t offset_vec, size_t vl)
@@ -99,11 +92,7 @@ void base64_encode_rvv(uint8_t *input, uint8_t *output, size_t length)
 {
     size_t vl;
 
-    // size_t vlmax = __riscv_vsetvlmax_e32m1();
-
     size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
-
-    // const vuint16m2_t vec_index = loadIndex();
 
     const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_8);
 
@@ -120,8 +109,7 @@ void base64_encode_rvv(uint8_t *input, uint8_t *output, size_t length)
 
         vl = __riscv_vsetvl_e8m1(vlmax_8);
 
-        // vuint8m1_t vec_gather = __riscv_vrgather_vv_u8m1(vec_input, vec_index_e8m1, vl);
-        vuint8m1_t vec_gather = __riscv_vrgatherei16_vv_u8m1(vec_input, vec_index, vl);
+        vuint8m1_t vec_gather = __riscv_vrgather_vv_u8m1(vec_input, vec_index_e8m1, vl);
 
         vl = __riscv_vsetvlmax_e32m1();
 
