@@ -47,89 +47,103 @@ const uint8_t gather_index_lmul4[64] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 
 
 const int8_t offsets[16] = {71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 65, 0, 0};
 
-vuint8m1_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vuint8m1_t vec_indices, vint8m1_t offset_vec, size_t vl)
+vuint8m2_t __attribute__((always_inline)) inline branchless_table_lookup_opt(vuint8m2_t vec_indices, vint8m1_t offset_vec, size_t vl)
 {
-    vuint8m1_t result = __riscv_vssubu_vx_u8m1(vec_indices, 51, vl);
+    vuint8m2_t result = __riscv_vssubu_vx_u8m2(vec_indices, 51, vl);
 
-    vbool8_t vec_lt_26 = __riscv_vmsltu_vx_u8m1_b8(vec_indices, 26, vl);
+    vbool4_t vec_lt_26 = __riscv_vmsltu_vx_u8m2_b4(vec_indices, 26, vl);
 
-    const vuint8m1_t vec_lookup = __riscv_vadd_vx_u8m1_mu(vec_lt_26, result, result, 13, vl);
+    const vuint8m2_t vec_lookup = __riscv_vadd_vx_u8m2_mu(vec_lt_26, result, result, 13, vl);
 
-    offset_vec = __riscv_vrgather_vv_i8m1(offset_vec, vec_lookup, vl);
+    vuint8m1_t vec_lookup_0 = __riscv_vget_v_u8m2_u8m1(vec_lookup, 0);
+    vuint8m1_t vec_lookup_1 = __riscv_vget_v_u8m2_u8m1(vec_lookup, 1);
 
-    vint8m1_t ascii_vec = __riscv_vadd_vv_i8m1(__riscv_vreinterpret_v_u8m1_i8m1(vec_indices), offset_vec, vl);
+    vint8m1_t offset_vec_0 = __riscv_vrgather_vv_i8m1(offset_vec, vec_lookup_0, vl);
+    vint8m1_t offset_vec_1 = __riscv_vrgather_vv_i8m1(offset_vec, vec_lookup_1, vl);
 
-    return __riscv_vreinterpret_v_i8m1_u8m1(ascii_vec);
+    vint8m2_t offset_vec_bundle = __riscv_vcreate_v_i8m1_i8m2(offset_vec_0, offset_vec_1);
+
+    vint8m2_t ascii_vec = __riscv_vadd_vv_i8m2(__riscv_vreinterpret_v_u8m2_i8m2(vec_indices), offset_vec_bundle, vl);
+
+    return __riscv_vreinterpret_v_i8m2_u8m2(ascii_vec);
 }
 
-vuint32m1_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuint8m1_t data, size_t vl)
+vuint32m2_t __attribute__((always_inline)) inline create_lookup_indices_opt(vuint8m2_t data, size_t vl)
 {
 
-    const vuint32m1_t const_vec_ac = __riscv_vmv_v_x_u32m1(0x04000040, vl);
-    const vuint32m1_t const_vec_bd = __riscv_vmv_v_x_u32m1(0x01000010, vl);
+    const vuint32m2_t const_vec_ac = __riscv_vmv_v_x_u32m2(0x04000040, vl);
+    const vuint32m2_t const_vec_bd = __riscv_vmv_v_x_u32m2(0x01000010, vl);
 
-    vuint32m1_t input32 = __riscv_vreinterpret_v_u8m1_u32m1(data);
-
-    // mask out so that only a and c bits remain
-    vuint32m1_t index_a_c = __riscv_vand_vx_u32m1(input32, 0x0FC0FC00, vl);
+    vuint32m2_t input32 = __riscv_vreinterpret_v_u8m2_u32m2(data);
 
     // mask out so that only a and c bits remain
-    vuint32m1_t index_b_d = __riscv_vand_vx_u32m1(input32, 0x003F03F0, vl);
+    vuint32m2_t index_a_c = __riscv_vand_vx_u32m2(input32, 0x0FC0FC00, vl);
 
-    vl = __riscv_vsetvlmax_e16m1();
+    // mask out so that only a and c bits remain
+    vuint32m2_t index_b_d = __riscv_vand_vx_u32m2(input32, 0x003F03F0, vl);
+
+    vl = __riscv_vsetvlmax_e16m2();
     // multiply 16-bit integers and store high 16 bits of 32-bit result
-    vuint16m1_t vec_shifted_ac = __riscv_vmulhu_vv_u16m1(__riscv_vreinterpret_v_u32m1_u16m1(index_a_c), __riscv_vreinterpret_v_u32m1_u16m1(const_vec_ac), vl);
+    vuint16m2_t vec_shifted_ac = __riscv_vmulhu_vv_u16m2(__riscv_vreinterpret_v_u32m2_u16m2(index_a_c), __riscv_vreinterpret_v_u32m2_u16m2(const_vec_ac), vl);
 
     // multiply 16-bit integers and store low 16 bits of 32-bit result
-    vuint16m1_t vec_shifted_bd = __riscv_vmul_vv_u16m1(__riscv_vreinterpret_v_u32m1_u16m1(index_b_d), __riscv_vreinterpret_v_u32m1_u16m1(const_vec_bd), vl);
+    vuint16m2_t vec_shifted_bd = __riscv_vmul_vv_u16m2(__riscv_vreinterpret_v_u32m2_u16m2(index_b_d), __riscv_vreinterpret_v_u32m2_u16m2(const_vec_bd), vl);
 
-    vl = __riscv_vsetvlmax_e32m1();
+    vl = __riscv_vsetvlmax_e32m2();
 
-    return __riscv_vor_vv_u32m1(__riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_ac), __riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_bd), vl);
+    return __riscv_vor_vv_u32m2(__riscv_vreinterpret_v_u16m2_u32m2(vec_shifted_ac), __riscv_vreinterpret_v_u16m2_u32m2(vec_shifted_bd), vl);
 }
 
 void base64_encode_rvv(uint8_t *input, uint8_t *output, size_t length)
 {
     size_t vl;
 
-    size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
+    size_t vlmax_e8m2 = __riscv_vsetvlmax_e8m2();
+    size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
 
-    const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_8);
+    const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_e8m1);
 
-    vint8m1_t offset_vec = __riscv_vle8_v_i8m1(offsets, vlmax_8);
+    vint8m1_t offset_vec = __riscv_vle8_v_i8m1(offsets, vlmax_e8m1);
 
-    size_t input_slice = (vlmax_8 / 4) * 3;
+    size_t input_slice_e8m2 = (vlmax_e8m2 / 4) * 3;
+    size_t input_slice_e8m1 = (vlmax_e8m1 / 4) * 3;
 
-    for (; length >= input_slice; length -= input_slice)
+    for (; length >= input_slice_e8m2; length -= input_slice_e8m2)
     {
 
-        vl = __riscv_vsetvl_e8m1(input_slice);
+        vl = __riscv_vsetvl_e8m1(input_slice_e8m1);
 
-        vuint8m1_t vec_input = __riscv_vle8_v_u8m1(input, vl);
+        vuint8m1_t vec_input_0 = __riscv_vle8_v_u8m1(input, vl);
+        input += (vlmax_e8m1 / 4) * 3;
+        vuint8m1_t vec_input_1 = __riscv_vle8_v_u8m1(input, vl);
 
-        vl = __riscv_vsetvl_e8m1(vlmax_8);
+        vl = __riscv_vsetvl_e8m1(vlmax_e8m1);
 
-        vuint8m1_t vec_gather = __riscv_vrgather_vv_u8m1(vec_input, vec_index_e8m1, vl);
+        vuint8m1_t vec_gather_0 = __riscv_vrgather_vv_u8m1(vec_input_0, vec_index_e8m1, vl);
+        vuint8m1_t vec_gather_1 = __riscv_vrgather_vv_u8m1(vec_input_1, vec_index_e8m1, vl);
 
-        vl = __riscv_vsetvlmax_e32m1();
+        vuint8m2_t vec_gather = __riscv_vcreate_v_u8m1_u8m2(vec_gather_0, vec_gather_1);
+
+        vl = __riscv_vsetvlmax_e32m2();
 
         // two different ways to compute lookup indices
         // vuint32m1_t vec_lookup_indices = create_lookup_indices_naive(vec_gather, vl);
-        vuint32m1_t vec_lookup_indices = create_lookup_indices_opt(vec_gather, vl);
+        vuint32m2_t vec_lookup_indices = create_lookup_indices_opt(vec_gather, vl);
 
-        vl = __riscv_vsetvlmax_e8m1();
+        vl = __riscv_vsetvlmax_e8m2();
 
         // three different ways to calculate the lookup step
         // vuint8m1_t base64_chars = __riscv_vluxei8_v_u8m1(b64chars, __riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), vl);
         // vuint8m1_t base64_chars = branchless_table_lookup_naive(__riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), vl);
-        vuint8m1_t base64_chars = branchless_table_lookup_opt(__riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), offset_vec, vl);
+        vuint8m2_t base64_chars = branchless_table_lookup_opt(__riscv_vreinterpret_v_u32m2_u8m2(vec_lookup_indices), offset_vec, vl);
 
         //  __riscv_vse8_v_u8m1(output, __riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), vl);
-        __riscv_vse8_v_u8m1(output, base64_chars, vl);
+        __riscv_vse8_v_u8m2(output, base64_chars, vl);
 
-        vl = __riscv_vsetvl_e8m1(length);
-        input += input_slice;
-        output += vlmax_8;
+        vl = __riscv_vsetvl_e8m2(length);
+        input += (vlmax_e8m1 / 4) * 3;
+
+        output += vlmax_e8m2;
     }
     Base64encode((char *)output, (char *)input, length);
 }
