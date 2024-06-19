@@ -382,27 +382,20 @@ void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 
         size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
-        // __riscv_vse8_v_i8m1(output, result, vl);
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_0), vl);
-        // __riscv_vse8_v_i8m1(output, data_reg, vl);
-
-        data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_1), vl);
-
-        data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_2), vl);
-
-        data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_3), vl);
-
-        data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
+
+        vlmax_8 = __riscv_vsetvlmax_e8m4();
+        data += vlmax_8;
     }
     if (input_length != 0)
     {
