@@ -57,10 +57,10 @@ void run_base64_decode()
         timeElapsed_scalar = timespecDiff(&end, &start);
         printf("base64_scalar time (qs): %f\n", ((double)timeElapsed_scalar / 1000));
 
-        base64_decode_rvv(base64_data, output_rvv, N);
+        base64_decode_rvv_m2(base64_data, output_rvv, N);
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-        base64_decode_rvv(base64_data, output_rvv, N);
+        base64_decode_rvv_m2(base64_data, output_rvv, N);
         clock_gettime(CLOCK_MONOTONIC_RAW, &end);
         timeElapsed_rvv = timespecDiff(&end, &start);
         printf("base64_rvv time (qs): %f\n", ((double)timeElapsed_rvv  / 1000));
