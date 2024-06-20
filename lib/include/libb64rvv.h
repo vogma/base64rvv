@@ -18,8 +18,8 @@ extern "C"
 
     // vectorized code
     void base64_encode_rvv(uint8_t *input, uint8_t *output, size_t length);
-    void base64_decode_rvv(const char *data, int8_t *output, size_t input_length);
-    void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length);
+    size_t base64_decode_rvv_m2(const char *data, int8_t *output, size_t input_length);
+    size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length);
 
     // size_t DecodeChunk(const char *in, size_t inLen,uint8_t *out);
 
