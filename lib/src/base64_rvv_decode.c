@@ -188,14 +188,14 @@ vuint32m2_t pack_data_m2(vint8m2_t data, size_t vl)
     // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
 
-const uint8_t index_decode[16] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 15, 3, 7, 11};
-const uint8_t index_decode_256[32] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 18, 17, 16, 22, 21, 20, 26, 25, 24, 30, 29, 28, 15, 3, 7, 11, 19, 23, 27, 31};
+const uint8_t index_decode[32] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 18, 17, 16, 22, 21, 20, 26, 25, 24, 30, 29, 28, 15, 3, 7, 11, 19, 23, 27, 31};
 
 // static uint8_t lookup_vlen8_m2[32*8];
 
-void base64_decode_rvv(const char *data, int8_t *output, size_t input_length)
+size_t base64_decode_rvv_m2(const char *data, int8_t *output, size_t input_length)
 {
     size_t vlmax_8 = __riscv_vsetvlmax_e8m2();
+    size_t dLen = 0;
 
     for (; input_length >= vlmax_8; input_length -= vlmax_8)
     {
@@ -258,7 +258,7 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length)
 
         vuint32m2_t packed_data = __riscv_vor_vv_u32m2(t1, t2, vlmax_32);
 
-        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode_256, vlmax_8);
+        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_8);
 
         // rearrange elements in vector
 
@@ -266,10 +266,8 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length)
 
         vuint8m2_t packed_data_e8m2 = __riscv_vreinterpret_v_u32m2_u8m2(packed_data);
 
-        vuint8m1_t packed_data_e8m2_0 = __riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 0);
-        vuint8m1_t packed_data_e8m2_1 = __riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 1);
-        vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(packed_data_e8m2_0, index_vector, vlmax_8);
-        vuint8m1_t result_1 = __riscv_vrgather_vv_u8m1(packed_data_e8m2_1, index_vector, vlmax_8);
+        vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 0), index_vector, vlmax_8);
+        vuint8m1_t result_1 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 1), index_vector, vlmax_8);
 
         size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
@@ -284,23 +282,27 @@ void base64_decode_rvv(const char *data, int8_t *output, size_t input_length)
 
         data += vlmax_8;
         output += (vlmax_8 / 4) * 3;
+        dLen += ((vlmax_8 / 4) * 3) * 2;
     }
     if (input_length != 0)
     {
-        base64_decode_tail(data, input_length, (unsigned char *)output);
+        dLen += base64_decode_tail(data, input_length, (unsigned char *)output);
     }
+    return dLen;
 }
 
-void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
+size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 {
     size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
+    size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
+
+    size_t dLen = 0;
+
+    const vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_e8m1);
 
     for (; input_length >= vlmax_8; input_length -= vlmax_8)
     {
         vint8m4_t data_reg = __riscv_vle8_v_i8m4((const signed char *)data, vlmax_8);
-
-        // data_reg = vector_loochromkup_naive(data_reg, vlmax_8);
-        // data_reg = vector_lookup_vrgather(data_reg, vlmax_8);
 
         size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
 
@@ -361,11 +363,11 @@ void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 
         vuint32m4_t packed_data = __riscv_vor_vv_u32m4(t1, t2, vlmax_32);
 
-        vlmax_8 = __riscv_vsetvlmax_e8m1();
-        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode_256, vlmax_8);
+        // vlmax_8 = __riscv_vsetvlmax_e8m1();
 
         // rearrange elements in vector
 
+        // vuint8m4_t packed_data_e8m4 = __riscv_vreinterpret_v_u32m4_u8m4(data_vector);
         vuint8m4_t packed_data_e8m4 = __riscv_vreinterpret_v_u32m4_u8m4(packed_data);
 
         vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 0), index_vector, vlmax_8);
@@ -373,25 +375,27 @@ void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
         vuint8m1_t result_2 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 2), index_vector, vlmax_8);
         vuint8m1_t result_3 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 3), index_vector, vlmax_8);
 
-        size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
+        size_t vl = __riscv_vsetvl_e8m1((vlmax_e8m1 / 4) * 3);
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_0), vl);
-        output += (vlmax_8 / 4) * 3;
+        output += (vlmax_e8m1 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_1), vl);
-        output += (vlmax_8 / 4) * 3;
+        output += (vlmax_e8m1 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_2), vl);
-        output += (vlmax_8 / 4) * 3;
+        output += (vlmax_e8m1 / 4) * 3;
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_3), vl);
-        output += (vlmax_8 / 4) * 3;
+        output += (vlmax_e8m1 / 4) * 3;
 
         vlmax_8 = __riscv_vsetvlmax_e8m4();
         data += vlmax_8;
+        dLen += vlmax_e8m1 * 3;
     }
     if (input_length != 0)
     {
-        base64_decode_tail(data, input_length, (unsigned char *)output);
+        dLen += base64_decode_tail(data, input_length, (unsigned char *)output);
     }
+    return dLen;
 }

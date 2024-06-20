@@ -126,6 +126,20 @@ void base64_encode_rvv(uint8_t *input, uint8_t *output, size_t length)
 
         vuint8m1_t vec_input_3 = __riscv_vle8_v_u8m1(input, vl);
 
+        // vuint8m4_t vec_input_m4 = __riscv_vle8_v_u8m4(input, input_slice_e8m4);
+
+        // vuint8m1_t vec_gather_0 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(vec_input_m4, 0), vec_index_e8m1, vl);
+        // vec_input_m4 = __riscv_vslidedown(vec_input_m4, 24, vlmax_e8m4);
+
+        // vuint8m1_t vec_gather_1 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(vec_input_m4, 0), vec_index_e8m1, vl);
+        // vec_input_m4 = __riscv_vslidedown(vec_input_m4, 24, vlmax_e8m4);
+
+        // vuint8m1_t vec_gather_2 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(vec_input_m4, 0), vec_index_e8m1, vl);
+        // vec_input_m4 = __riscv_vslidedown(vec_input_m4, 24, vlmax_e8m4);
+        
+        // vuint8m1_t vec_gather_3 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(vec_input_m4, 0), vec_index_e8m1, vl);
+        // vec_input_m4 = __riscv_vslidedown(vec_input_m4, 24, vlmax_e8m4);
+
         vl = __riscv_vsetvl_e8m1(vlmax_e8m1);
 
         //  the vrgather operation is cheaper at lmul=1 (4*4=16 cycles) than at lmul=4 (64 cycles), therefore each register gets shuffled seperately (https://camel-cdr.github.io/rvv-bench-results/bpi_f3/index.html)
