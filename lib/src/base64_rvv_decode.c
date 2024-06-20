@@ -368,15 +368,10 @@ void base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 
         vuint8m4_t packed_data_e8m4 = __riscv_vreinterpret_v_u32m4_u8m4(packed_data);
 
-        vuint8m1_t packed_data_e8m4_0 = __riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 0);
-        vuint8m1_t packed_data_e8m4_1 = __riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 1);
-        vuint8m1_t packed_data_e8m4_2 = __riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 2);
-        vuint8m1_t packed_data_e8m4_3 = __riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 3);
-
-        vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(packed_data_e8m4_0, index_vector, vlmax_8);
-        vuint8m1_t result_1 = __riscv_vrgather_vv_u8m1(packed_data_e8m4_1, index_vector, vlmax_8);
-        vuint8m1_t result_2 = __riscv_vrgather_vv_u8m1(packed_data_e8m4_2, index_vector, vlmax_8);
-        vuint8m1_t result_3 = __riscv_vrgather_vv_u8m1(packed_data_e8m4_3, index_vector, vlmax_8);
+        vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 0), index_vector, vlmax_8);
+        vuint8m1_t result_1 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 1), index_vector, vlmax_8);
+        vuint8m1_t result_2 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 2), index_vector, vlmax_8);
+        vuint8m1_t result_3 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 3), index_vector, vlmax_8);
 
         size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
 
