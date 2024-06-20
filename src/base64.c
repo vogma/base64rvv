@@ -110,12 +110,12 @@ void run_base64_encode(void)
     timeElapsed_scalar = timespecDiff(&end, &start);
     printf("base64_scalar time: %f\n", ((double)timeElapsed_scalar / 1000));
 
-    base64_encode_rvv(inputData, output_vector, N);
+    base64_encode_rvv_m4(inputData, output_vector, N);
     // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
 
     // measure vector code
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-    base64_encode_rvv(inputData, output_vector, N);
+    base64_encode_rvv_m4(inputData, output_vector, N);
     // base64_encode_asm((uint8_t *)inputData, (char *)output_vector, offsets, gather_index_lmul4, &length);
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     timeElapsed_vector = timespecDiff(&end, &start);
