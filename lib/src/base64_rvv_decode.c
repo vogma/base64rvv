@@ -201,14 +201,9 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
     {
         vint8m1_t data_reg = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_8);
 
-        // data_reg = vector_loochromkup_naive(data_reg, vlmax_8);
-        // data_reg = vector_lookup_vrgather(data_reg, vlmax_8);
-
         size_t vlmax_8 = __riscv_vsetvlmax_e8m1();
 
         const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
-
-        // const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(lookup_vlen8_m1, vlmax_8);
 
         // extract higher nibble from 8-bit data
         vuint8m1_t higher_nibble = __riscv_vsrl_vx_u8m1(__riscv_vreinterpret_v_i8m1_u8m1(data_reg), 4, vlmax_8);
