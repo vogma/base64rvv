@@ -2,111 +2,6 @@
 
 #define NO_ERROR -1
 
-/* ASCII order for BASE 64 decode, 255 in unused character */
-static const unsigned char base64de[] = {
-    /* nul, soh, stx, etx, eot, enq, ack, bel, */
-    255, 255, 255, 255, 255, 255, 255, 255,
-
-    /*  bs,  ht,  nl,  vt,  np,  cr,  so,  si, */
-    255, 255, 255, 255, 255, 255, 255, 255,
-
-    /* dle, dc1, dc2, dc3, dc4, nak, syn, etb, */
-    255, 255, 255, 255, 255, 255, 255, 255,
-
-    /* can,  em, sub, esc,  fs,  gs,  rs,  us, */
-    255, 255, 255, 255, 255, 255, 255, 255,
-
-    /*  sp, '!', '"', '#', '$', '%', '&', ''', */
-    255, 255, 255, 255, 255, 255, 255, 255,
-
-    /* '(', ')', '*', '+', ',', '-', '.', '/', */
-    255, 255, 255, 62, 255, 255, 255, 63,
-
-    /* '0', '1', '2', '3', '4', '5', '6', '7', */
-    52, 53, 54, 55, 56, 57, 58, 59,
-
-    /* '8', '9', ':', ';', '<', '=', '>', '?', */
-    60, 61, 255, 255, 255, 255, 255, 255,
-
-    /* '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', */
-    255, 0, 1, 2, 3, 4, 5, 6,
-
-    /* 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', */
-    7, 8, 9, 10, 11, 12, 13, 14,
-
-    /* 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', */
-    15, 16, 17, 18, 19, 20, 21, 22,
-
-    /* 'X', 'Y', 'Z', '[', '\', ']', '^', '_', */
-    23, 24, 25, 255, 255, 255, 255, 255,
-
-    /* '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', */
-    255, 26, 27, 28, 29, 30, 31, 32,
-
-    /* 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', */
-    33, 34, 35, 36, 37, 38, 39, 40,
-
-    /* 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', */
-    41, 42, 43, 44, 45, 46, 47, 48,
-
-    /* 'x', 'y', 'z', '{', '|', '}', '~', del, */
-    49, 50, 51, 255, 255, 255, 255, 255};
-
-#define BASE64_PAD '='
-#define BASE64DE_FIRST '+'
-#define BASE64DE_LAST 'z'
-
-unsigned int
-base64_decode_tail(const char *in, unsigned int inlen, unsigned char *out)
-{
-    unsigned int i;
-    unsigned int j;
-    unsigned char c;
-
-    // if (inlen & 0x3)
-    // {
-    //     return 0;
-    // }
-
-    for (i = j = 0; i < inlen; i++)
-    {
-        if (in[i] == BASE64_PAD)
-        {
-            break;
-        }
-        if (in[i] < BASE64DE_FIRST || in[i] > BASE64DE_LAST)
-        {
-            return 0;
-        }
-
-        c = base64de[(unsigned char)in[i]];
-        if (c == 255)
-        {
-            return 0;
-        }
-
-        switch (i & 0x3)
-        {
-        case 0:
-            out[j] = (c << 2) & 0xFF;
-            break;
-        case 1:
-            out[j++] |= (c >> 4) & 0x3;
-            out[j] = (c & 0xF) << 4;
-            break;
-        case 2:
-            out[j++] |= (c >> 2) & 0xF;
-            out[j] = (c & 0x3) << 6;
-            break;
-        case 3:
-            out[j++] |= c;
-            break;
-        }
-    }
-
-    return j;
-}
-
 const int8_t LOWER_INVALID = 1;
 const int8_t UPPER_INVALID = 1;
 
@@ -122,12 +17,6 @@ const int8_t upper_bound_lut[16] =
         0x4f, 0x5a, 0x6f, 0x7a,
         UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID,
         UPPER_INVALID, UPPER_INVALID, UPPER_INVALID, UPPER_INVALID};
-
-const int8_t shift_lut[16] = {
-    /* 0 */ 0x00, /* 1 */ 0x00, /* 2 */ 0x3e - 0x2b, /* 3 */ 0x34 - 0x30,
-    /* 4 */ 0x00 - 0x41, /* 5 */ 0x0f - 0x50, /* 6 */ 0x1a - 0x61, /* 7 */ 0x29 - 0x70,
-    /* 8 */ 0x00, /* 9 */ 0x00, /* a */ 0x00, /* b */ 0x00,
-    /* c */ 0x00, /* d */ 0x00, /* e */ 0x00, /* f */ 0x00};
 
 vint8m2_t vector_lookup_vrgather_m2(vint8m2_t data, size_t vl)
 {
@@ -187,10 +76,6 @@ vuint32m2_t pack_data_m2(vint8m2_t data, size_t vl)
     return t0;
     // return __riscv_vand_vx_u32m1(t0, 0x00FFFFFF, vlmax_32);
 }
-
-const uint8_t index_decode[32] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 18, 17, 16, 22, 21, 20, 26, 25, 24, 30, 29, 28, 15, 3, 7, 11, 19, 23, 27, 31};
-
-// static uint8_t lookup_vlen8_m2[32*8];
 
 size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_length)
 {
@@ -279,103 +164,62 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
     return dLen;
 }
 
-size_t base64_decode_rvv_m2(const char *data, int8_t *output, size_t input_length)
+#define VRGATHER_u8m4(tbl, idx, vl) __riscv_vcreate_v_u8m1_u8m4(         \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 0), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 1), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 2), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 3), vl))
+
+size_t b64_decode_rvv(const char *src, char *dst, size_t length)
 {
-    size_t vlmax_8 = __riscv_vsetvlmax_e8m2();
-    size_t dLen = 0;
 
-    for (; input_length >= vlmax_8; input_length -= vlmax_8)
+    static const unsigned char err_lo[16] = {21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 19, 26, 27, 27, 27, 26};
+    static const unsigned char err_hi[16] = {16, 16, 1, 2, 4, 8, 4, 8, 16, 16, 16, 16, 16, 16, 16, 16};
+    static const unsigned char off[16] = {0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    const vuint8m1_t vErrLo = __riscv_vle8_v_u8m1(err_lo, sizeof err_lo);
+    const vuint8m1_t vErrHi = __riscv_vle8_v_u8m1(err_hi, sizeof err_hi);
+    const vuint8m1_t vOff = __riscv_vle8_v_u8m1(off, sizeof off);
+
+    // assume valid for now
+    size_t len = length / 4;
+    for (size_t vl; len > 0; len -= vl, dst += vl * 3, src += vl * 4)
     {
-        vint8m2_t data_reg = __riscv_vle8_v_i8m2((const signed char *)data, vlmax_8);
+        vl = __riscv_vsetvl_e8m1(len);
+        vuint8m1x4_t vseg = __riscv_vlseg4e8_v_u8m1x4((const uint8_t *)src, vl);
+        vuint8m1_t v0 = __riscv_vget_u8m1(vseg, 0);
+        vuint8m1_t v1 = __riscv_vget_u8m1(vseg, 1);
+        vuint8m1_t v2 = __riscv_vget_u8m1(vseg, 2);
+        vuint8m1_t v3 = __riscv_vget_u8m1(vseg, 3);
 
-        // data_reg = vector_loochromkup_naive(data_reg, vlmax_8);
-        // data_reg = vector_lookup_vrgather(data_reg, vlmax_8);
+        vuint8m4_t v = __riscv_vcreate_v_u8m1_u8m4(v0, v1, v2, v3);
+        const size_t vl4 = __riscv_vsetvlmax_e8m4();
+        vuint8m4_t vHi = __riscv_vsrl(v, 4, vl4);
+        vuint8m4_t vLo = __riscv_vand(v, 0xF, vl4);
+        vuint8m4_t vIdx = __riscv_vmerge(vHi, ('/' >> 4) - 1, __riscv_vmseq(v, '/', vl4), vl4);
 
-        size_t vlmax_8 = __riscv_vsetvlmax_e8m2();
+        vuint8m4_t vErr = __riscv_vand(
+            VRGATHER_u8m4(vErrLo, vLo, vl),
+            VRGATHER_u8m4(vErrHi, vHi, vl), vl4);
 
-        const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
+        // TODO: make sure this works when vl!=vlmax
+        if (__riscv_vfirst(__riscv_vmsne(vErr, 0, vl4), vl4) >= 0)
+            return 0;
 
-        // const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m2(lookup_vlen8_m2, vlmax_8);
+        vuint8m4_t bits = VRGATHER_u8m4(vOff, vIdx, vl);
 
-        // extract higher nibble from 8-bit data
-        vuint8m2_t higher_nibble = __riscv_vsrl_vx_u8m2(__riscv_vreinterpret_v_i8m2_u8m2(data_reg), 4, vlmax_8);
+        vuint8m1_t b0 = __riscv_vadd(v0, __riscv_vget_u8m1(bits, 0), vl); // 0b00AAAAAA
+        vuint8m1_t b1 = __riscv_vadd(v1, __riscv_vget_u8m1(bits, 1), vl); // 0b00AABBBB
+        vuint8m1_t b2 = __riscv_vadd(v2, __riscv_vget_u8m1(bits, 2), vl); // 0b00BBBBCC
+        vuint8m1_t b3 = __riscv_vadd(v3, __riscv_vget_u8m1(bits, 3), vl); // 0b00CCCCCC
 
-        // vint8m1_t upper_bound = __riscv_vrgather_vv_i8m1(vec_upper_lut, higher_nibble, vlmax_8);
-        // vint8m1_t lower_bound = __riscv_vrgather_vv_i8m1(vec_lower_lut, higher_nibble, vlmax_8);
-
-        // vbool8_t lower = __riscv_vmslt_vv_i8m1_b8(data, lower_bound, vlmax_8);
-        // vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
-        // vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data, 0x2f, vlmax_8);
-
-        // vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
-        // vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
-
-        // int error = __riscv_vfirst_m_b8(outside, vlmax_8);
-
-        // if (error != NO_ERROR)
-        // {
-        //     printf("ERROR!\n");
-        // }
-
-        // vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
-
-        vlmax_8 = __riscv_vsetvlmax_e8m1();
-        vint8m2_t shift = __riscv_vcreate_v_i8m1_i8m2(__riscv_vrgather_vv_i8m1(vec_shift_lut, __riscv_vget_v_u8m2_u8m1(higher_nibble, 0), vlmax_8), __riscv_vrgather_vv_i8m1(vec_shift_lut, __riscv_vget_v_u8m2_u8m1(higher_nibble, 1), vlmax_8));
-
-        vlmax_8 = __riscv_vsetvlmax_e8m2();
-        data_reg = __riscv_vadd_vv_i8m2(data_reg, shift, vlmax_8);
-
-        // vuint32m1_t packed_data = pack_data(data_reg, vlmax_8);
-
-        size_t vlmax_32 = __riscv_vsetvlmax_e32m2();
-
-        vuint8m2_t convert = __riscv_vreinterpret_v_i8m2_u8m2(data_reg);
-        vuint32m2_t data_vector = __riscv_vreinterpret_v_u8m2_u32m2(convert);
-
-        vuint32m2_t ca = __riscv_vand_vx_u32m2(data_vector, 0x003f003f, vlmax_32);
-        ca = __riscv_vsll_vx_u32m2(ca, 6, vlmax_32);
-
-        vuint32m2_t db = __riscv_vand_vx_u32m2(data_vector, 0x3f003f00, vlmax_32);
-        db = __riscv_vsrl_vx_u32m2(db, 8, vlmax_32);
-
-        vuint32m2_t t0 = __riscv_vor_vv_u32m2(ca, db, vlmax_32);
-
-        vuint32m2_t t1 = __riscv_vsll_vx_u32m2(t0, 12, vlmax_32);
-        vuint32m2_t t2 = __riscv_vsrl_vx_u32m2(t0, 16, vlmax_32);
-
-        vuint32m2_t packed_data = __riscv_vor_vv_u32m2(t1, t2, vlmax_32);
-
-        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_8);
-
-        // rearrange elements in vector
-
-        vlmax_8 = __riscv_vsetvlmax_e8m1();
-
-        vuint8m2_t packed_data_e8m2 = __riscv_vreinterpret_v_u32m2_u8m2(packed_data);
-
-        vuint8m1_t result_0 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 0), index_vector, vlmax_8);
-        vuint8m1_t result_1 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m2_u8m1(packed_data_e8m2, 1), index_vector, vlmax_8);
-
-        size_t vl = __riscv_vsetvl_e8m1((vlmax_8 / 4) * 3);
-
-        // __riscv_vse8_v_i8m1(output, result, vl);
-        __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_0), vl);
-        // __riscv_vse8_v_i8m1(output, data_reg, vl);
-
-        data += vlmax_8;
-        output += (vlmax_8 / 4) * 3;
-
-        __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_1), vl);
-
-        data += vlmax_8;
-        output += (vlmax_8 / 4) * 3;
-        dLen += ((vlmax_8 / 4) * 3) * 2;
+        vuint8m1_t o0 = __riscv_vor(__riscv_vsll(b0, 2, vl), __riscv_vsrl(b1, 4, vl), vl);
+        vuint8m1_t o1 = __riscv_vor(__riscv_vsll(b1, 4, vl), __riscv_vsrl(b2, 2, vl), vl);
+        vuint8m1_t o2 = __riscv_vor(__riscv_vsll(b2, 6, vl), b3, vl);
+        __riscv_vsseg3e8_v_u8m1x3((uint8_t *)dst, __riscv_vcreate_v_u8m1x3(o0, o1, o2), vl);
     }
-    if (input_length != 0)
-    {
-        dLen += base64_decode_tail(data, input_length, (unsigned char *)output);
-    }
-    return dLen;
+
+    return 0;
 }
 
 size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
