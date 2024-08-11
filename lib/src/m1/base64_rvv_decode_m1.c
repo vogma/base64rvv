@@ -98,7 +98,7 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
 
         // vbool8_t lower = __riscv_vmslt_vv_i8m1_b8(data, lower_bound, vlmax_8);
         // vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
-        // vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data, 0x2f, vlmax_8);
+        vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data_reg, 0x2f, vlmax_8);
 
         // vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
         // vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
@@ -117,6 +117,8 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
 
         vlmax_8 = __riscv_vsetvlmax_e8m1();
         data_reg = __riscv_vadd_vv_i8m1(data_reg, shift, vlmax_8);
+
+        data_reg = __riscv_vadd_vx_i8m1_m(eq, data_reg, -3, vlmax_8);
 
         // vuint32m1_t packed_data = pack_data(data_reg, vlmax_8);
 
