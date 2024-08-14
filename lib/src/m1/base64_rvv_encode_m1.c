@@ -46,7 +46,7 @@ void base64_encode_rvv_m1(uint8_t *input, uint8_t *output, size_t length)
 
     size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
 
-    const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_e8m1);
+    const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul8, vlmax_e8m1);
 
     vint8m1_t offset_vec = __riscv_vle8_v_i8m1(offsets, vlmax_e8m1);
 

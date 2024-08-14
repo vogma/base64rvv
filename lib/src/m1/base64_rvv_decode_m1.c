@@ -100,22 +100,9 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
         // vbool8_t higher = __riscv_vmsgt_vv_i8m1_b8(data, upper_bound, vlmax_8);
         vbool8_t eq = __riscv_vmseq_vx_i8m1_b8(data_reg, 0x2f, vlmax_8);
 
-        // vbool8_t or = __riscv_vmor_mm_b8(lower, higher, vlmax_8);
-        // vbool8_t outside = __riscv_vmandn_mm_b8(eq, or, vlmax_8);
-
-        // int error = __riscv_vfirst_m_b8(outside, vlmax_8);
-
-        // if (error != NO_ERROR)
-        // {
-        //     printf("ERROR!\n");
-        // }
-
-        // vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
-
         vlmax_8 = __riscv_vsetvlmax_e8m1();
         vint8m1_t shift = __riscv_vrgather_vv_i8m1(vec_shift_lut, higher_nibble, vlmax_8);
 
-        vlmax_8 = __riscv_vsetvlmax_e8m1();
         data_reg = __riscv_vadd_vv_i8m1(data_reg, shift, vlmax_8);
 
         data_reg = __riscv_vadd_vx_i8m1_m(eq, data_reg, -3, vlmax_8);
