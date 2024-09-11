@@ -8,10 +8,10 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "riscv")
     set(CMAKE_C_COMPILER gcc)
 else()
     # Set the RISC-V toolchain for non-RISC-V platforms
-    message(STATUS "Using clang for non-RISC-V platform.")
+    message(STATUS "Using riscv64-unknown-linux-gnu-gcc for non-RISC-V platform.")
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR riscv)
-    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
 endif()
 
 ADD_COMPILE_OPTIONS(-march=rv64imafdcv_sscofpmf_sstc_svpbmt_zicbom_zicboz_zicbop_zihintpause -mabi=lp64d -O3 -static -Wall -g)
