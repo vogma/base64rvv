@@ -1,4 +1,5 @@
 #include <libb64rvv.h>
+#include <time.h>
 
 #define NO_ERROR -1
 
@@ -211,22 +212,102 @@ size_t b64_decode_rvv(const char *src, char *dst, size_t length)
     return 0;
 }
 
+#define VRGATHER_u8m4(tbl, idx, vl) __riscv_vcreate_v_u8m1_u8m4(         \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 0), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 1), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 2), vl), \
+    __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 3), vl))
+
+size_t b64_decode_rvv(const char *src, char *dst, size_t length)
+{
+
+    static const unsigned char err_lo[16] = {21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 19, 26, 27, 27, 27, 26};
+    static const unsigned char err_hi[16] = {16, 16, 1, 2, 4, 8, 4, 8, 16, 16, 16, 16, 16, 16, 16, 16};
+    static const unsigned char off[16] = {0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    const vuint8m1_t vErrLo = __riscv_vle8_v_u8m1(err_lo, sizeof err_lo);
+    const vuint8m1_t vErrHi = __riscv_vle8_v_u8m1(err_hi, sizeof err_hi);
+    const vuint8m1_t vOff = __riscv_vle8_v_u8m1(off, sizeof off);
+
+    // assume valid for now
+    size_t len = length / 4;
+    for (size_t vl; len > 0; len -= vl, dst += vl * 3, src += vl * 4)
+    {
+        vl = __riscv_vsetvl_e8m1(len);
+        vuint8m1x4_t vseg = __riscv_vlseg4e8_v_u8m1x4((const uint8_t *)src, vl);
+        vuint8m1_t v0 = __riscv_vget_u8m1(vseg, 0);
+        vuint8m1_t v1 = __riscv_vget_u8m1(vseg, 1);
+        vuint8m1_t v2 = __riscv_vget_u8m1(vseg, 2);
+        vuint8m1_t v3 = __riscv_vget_u8m1(vseg, 3);
+
+        vuint8m4_t v = __riscv_vcreate_v_u8m1_u8m4(v0, v1, v2, v3);
+        const size_t vl4 = __riscv_vsetvlmax_e8m4();
+        vuint8m4_t vHi = __riscv_vsrl(v, 4, vl4);
+        vuint8m4_t vLo = __riscv_vand(v, 0xF, vl4);
+        vuint8m4_t vIdx = __riscv_vmerge(vHi, ('/' >> 4) - 1, __riscv_vmseq(v, '/', vl4), vl4);
+
+        vuint8m4_t vErr = __riscv_vand(
+            VRGATHER_u8m4(vErrLo, vLo, vl),
+            VRGATHER_u8m4(vErrHi, vHi, vl), vl4);
+
+        // TODO: make sure this works when vl!=vlmax
+        if (__riscv_vfirst(__riscv_vmsne(vErr, 0, vl4), vl4) >= 0)
+            return 0;
+
+        vuint8m4_t bits = VRGATHER_u8m4(vOff, vIdx, vl);
+
+        vuint8m1_t b0 = __riscv_vadd(v0, __riscv_vget_u8m1(bits, 0), vl); // 0b00AAAAAA
+        vuint8m1_t b1 = __riscv_vadd(v1, __riscv_vget_u8m1(bits, 1), vl); // 0b00AABBBB
+        vuint8m1_t b2 = __riscv_vadd(v2, __riscv_vget_u8m1(bits, 2), vl); // 0b00BBBBCC
+        vuint8m1_t b3 = __riscv_vadd(v3, __riscv_vget_u8m1(bits, 3), vl); // 0b00CCCCCC
+
+        vuint8m1_t o0 = __riscv_vor(__riscv_vsll(b0, 2, vl), __riscv_vsrl(b1, 4, vl), vl);
+        vuint8m1_t o1 = __riscv_vor(__riscv_vsll(b1, 4, vl), __riscv_vsrl(b2, 2, vl), vl);
+        vuint8m1_t o2 = __riscv_vor(__riscv_vsll(b2, 6, vl), b3, vl);
+        __riscv_vsseg3e8_v_u8m1x3((uint8_t *)dst, __riscv_vcreate_v_u8m1x3(o0, o1, o2), vl);
+    }
+
+    return 0;
+}
+
 size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 {
+
+    struct timespec start_total, end_total, start_pack, end_pack, start_save, end_save, end_load;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start_total);
+
     size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
     size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
 
     size_t dLen = 0;
 
+    const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_e8m1);
+
     const vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_e8m1);
 
     for (; input_length >= vlmax_8; input_length -= vlmax_8)
     {
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start_total);
         vint8m4_t data_reg = __riscv_vle8_v_i8m4((const signed char *)data, vlmax_8);
 
-        size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
+        // vint8m1_t data_reg_0 = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_e8m1);
+        // data += vlmax_e8m1;
+        // vint8m1_t data_reg_1 = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_e8m1);
+        // data += vlmax_e8m1;
 
-        const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, vlmax_8);
+        // vint8m1_t data_reg_2 = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_e8m1);
+        // data += vlmax_e8m1;
+
+        // vint8m1_t data_reg_3 = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_e8m1);
+        // data += vlmax_e8m1;
+
+        // vint8m4_t data_reg = __riscv_vcreate_v_i8m1_i8m4(data_reg_0, data_reg_1, data_reg_2, data_reg_3);
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end_load);
+
+        size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
 
         // const vint8m1_t vec_shift_lut = __riscv_vle8_v_i8m2(lookup_vlen8_m2, vlmax_8);
 
@@ -266,6 +347,8 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
 
         // vuint32m1_t packed_data = pack_data(data_reg, vlmax_8);
 
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start_pack);
+
         size_t vlmax_32 = __riscv_vsetvlmax_e32m4();
 
         vuint8m4_t convert = __riscv_vreinterpret_v_i8m4_u8m4(data_reg);
@@ -296,6 +379,9 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
         vuint8m1_t result_2 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 2), index_vector, vlmax_8);
         vuint8m1_t result_3 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 3), index_vector, vlmax_8);
 
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end_pack);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start_save);
+
         size_t vl = __riscv_vsetvl_e8m1((vlmax_e8m1 / 4) * 3);
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_0), vl);
@@ -309,14 +395,38 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_3), vl);
         output += (vlmax_e8m1 / 4) * 3;
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end_save);
 
         vlmax_8 = __riscv_vsetvlmax_e8m4();
         data += vlmax_8;
         dLen += vlmax_e8m1 * 3;
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end_total);
+        uint64_t timeElapsed_pack = timespecDiff(&end_pack, &start_pack);
+        uint64_t timeElapsed_total = timespecDiff(&end_total, &start_total);
+        uint64_t timeElapsed_save = timespecDiff(&end_save, &start_save);
+        uint64_t timeElapsed_load = timespecDiff(&end_load, &start_total);
+        uint64_t timeElapsed_lookup = timespecDiff(&start_pack, &end_load);
+
+        uint64_t timeElapsed_acc = timeElapsed_pack + timeElapsed_load + timeElapsed_save + timeElapsed_lookup;
+
+        printf("input length:%ld total_time(qs):%f acc_time(qs):%f pack_time(qs):%f load_time(qs):%f save_time(qs):%f lookup_time(qs):%f\n",
+               vlmax_8,
+               ((double)timeElapsed_total / 1000),
+               ((double)timeElapsed_acc / 1000),
+               ((double)timeElapsed_pack / 1000),
+               ((double)timeElapsed_load / 1000),
+               ((double)timeElapsed_save / 1000),
+               ((double)timeElapsed_lookup / 1000));
     }
     if (input_length != 0)
     {
         dLen += base64_decode_tail(data, input_length, (unsigned char *)output);
     }
     return dLen;
+}
+
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
+{
+    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
+           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
