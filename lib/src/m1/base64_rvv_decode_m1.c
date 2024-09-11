@@ -218,58 +218,6 @@ size_t b64_decode_rvv(const char *src, char *dst, size_t length)
     __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 2), vl), \
     __riscv_vrgather_vv_u8m1(tbl, __riscv_vget_v_u8m4_u8m1(idx, 3), vl))
 
-size_t b64_decode_rvv(const char *src, char *dst, size_t length)
-{
-
-    static const unsigned char err_lo[16] = {21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 19, 26, 27, 27, 27, 26};
-    static const unsigned char err_hi[16] = {16, 16, 1, 2, 4, 8, 4, 8, 16, 16, 16, 16, 16, 16, 16, 16};
-    static const unsigned char off[16] = {0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0};
-
-    const vuint8m1_t vErrLo = __riscv_vle8_v_u8m1(err_lo, sizeof err_lo);
-    const vuint8m1_t vErrHi = __riscv_vle8_v_u8m1(err_hi, sizeof err_hi);
-    const vuint8m1_t vOff = __riscv_vle8_v_u8m1(off, sizeof off);
-
-    // assume valid for now
-    size_t len = length / 4;
-    for (size_t vl; len > 0; len -= vl, dst += vl * 3, src += vl * 4)
-    {
-        vl = __riscv_vsetvl_e8m1(len);
-        vuint8m1x4_t vseg = __riscv_vlseg4e8_v_u8m1x4((const uint8_t *)src, vl);
-        vuint8m1_t v0 = __riscv_vget_u8m1(vseg, 0);
-        vuint8m1_t v1 = __riscv_vget_u8m1(vseg, 1);
-        vuint8m1_t v2 = __riscv_vget_u8m1(vseg, 2);
-        vuint8m1_t v3 = __riscv_vget_u8m1(vseg, 3);
-
-        vuint8m4_t v = __riscv_vcreate_v_u8m1_u8m4(v0, v1, v2, v3);
-        const size_t vl4 = __riscv_vsetvlmax_e8m4();
-        vuint8m4_t vHi = __riscv_vsrl(v, 4, vl4);
-        vuint8m4_t vLo = __riscv_vand(v, 0xF, vl4);
-        vuint8m4_t vIdx = __riscv_vmerge(vHi, ('/' >> 4) - 1, __riscv_vmseq(v, '/', vl4), vl4);
-
-        vuint8m4_t vErr = __riscv_vand(
-            VRGATHER_u8m4(vErrLo, vLo, vl),
-            VRGATHER_u8m4(vErrHi, vHi, vl), vl4);
-
-        // TODO: make sure this works when vl!=vlmax
-        if (__riscv_vfirst(__riscv_vmsne(vErr, 0, vl4), vl4) >= 0)
-            return 0;
-
-        vuint8m4_t bits = VRGATHER_u8m4(vOff, vIdx, vl);
-
-        vuint8m1_t b0 = __riscv_vadd(v0, __riscv_vget_u8m1(bits, 0), vl); // 0b00AAAAAA
-        vuint8m1_t b1 = __riscv_vadd(v1, __riscv_vget_u8m1(bits, 1), vl); // 0b00AABBBB
-        vuint8m1_t b2 = __riscv_vadd(v2, __riscv_vget_u8m1(bits, 2), vl); // 0b00BBBBCC
-        vuint8m1_t b3 = __riscv_vadd(v3, __riscv_vget_u8m1(bits, 3), vl); // 0b00CCCCCC
-
-        vuint8m1_t o0 = __riscv_vor(__riscv_vsll(b0, 2, vl), __riscv_vsrl(b1, 4, vl), vl);
-        vuint8m1_t o1 = __riscv_vor(__riscv_vsll(b1, 4, vl), __riscv_vsrl(b2, 2, vl), vl);
-        vuint8m1_t o2 = __riscv_vor(__riscv_vsll(b2, 6, vl), b3, vl);
-        __riscv_vsseg3e8_v_u8m1x3((uint8_t *)dst, __riscv_vcreate_v_u8m1x3(o0, o1, o2), vl);
-    }
-
-    return 0;
-}
-
 size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 {
 
@@ -423,10 +371,4 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
         dLen += base64_decode_tail(data, input_length, (unsigned char *)output);
     }
     return dLen;
-}
-
-int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
-{
-    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
-           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
