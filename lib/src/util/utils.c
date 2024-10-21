@@ -89,7 +89,6 @@ static const unsigned char base64de[] = {
     /* 'x', 'y', 'z', '{', '|', '}', '~', del, */
     49, 50, 51, 255, 255, 255, 255, 255};
 
-
 #define BASE64_PAD '='
 #define BASE64DE_FIRST '+'
 #define BASE64DE_LAST 'z'
