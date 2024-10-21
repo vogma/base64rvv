@@ -1,4 +1,5 @@
 #include <libb64rvv.h>
+#include <utils.h>
 
 vuint8m1_t __attribute__((always_inline)) inline table_lookup_m1(vuint8m1_t vec_indices, vint8m1_t offset_vec, size_t vl)
 {

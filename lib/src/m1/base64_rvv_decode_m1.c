@@ -1,5 +1,5 @@
 #include <libb64rvv.h>
-#include <time.h>
+#include <utils.h>
 
 #define NO_ERROR -1
 
@@ -221,10 +221,6 @@ size_t b64_decode_rvv(const char *src, char *dst, size_t length)
 size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length)
 {
 
-    struct timespec start_total, end_total, start_pack, end_pack, start_save, end_save, end_load;
-
-    clock_gettime(CLOCK_MONOTONIC_RAW, &start_total);
-
     size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
     size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
 
@@ -237,7 +233,6 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
     for (; input_length >= vlmax_8; input_length -= vlmax_8)
     {
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &start_total);
         vint8m4_t data_reg = __riscv_vle8_v_i8m4((const signed char *)data, vlmax_8);
 
         // vint8m1_t data_reg_0 = __riscv_vle8_v_i8m1((const signed char *)data, vlmax_e8m1);
@@ -253,7 +248,6 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
 
         // vint8m4_t data_reg = __riscv_vcreate_v_i8m1_i8m4(data_reg_0, data_reg_1, data_reg_2, data_reg_3);
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end_load);
 
         size_t vlmax_8 = __riscv_vsetvlmax_e8m4();
 
@@ -295,8 +289,6 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
 
         // vuint32m1_t packed_data = pack_data(data_reg, vlmax_8);
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &start_pack);
-
         size_t vlmax_32 = __riscv_vsetvlmax_e32m4();
 
         vuint8m4_t convert = __riscv_vreinterpret_v_i8m4_u8m4(data_reg);
@@ -327,9 +319,6 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
         vuint8m1_t result_2 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 2), index_vector, vlmax_8);
         vuint8m1_t result_3 = __riscv_vrgather_vv_u8m1(__riscv_vget_v_u8m4_u8m1(packed_data_e8m4, 3), index_vector, vlmax_8);
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end_pack);
-        clock_gettime(CLOCK_MONOTONIC_RAW, &start_save);
-
         size_t vl = __riscv_vsetvl_e8m1((vlmax_e8m1 / 4) * 3);
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_0), vl);
@@ -343,28 +332,10 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
 
         __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(result_3), vl);
         output += (vlmax_e8m1 / 4) * 3;
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end_save);
 
         vlmax_8 = __riscv_vsetvlmax_e8m4();
         data += vlmax_8;
         dLen += vlmax_e8m1 * 3;
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end_total);
-        uint64_t timeElapsed_pack = timespecDiff(&end_pack, &start_pack);
-        uint64_t timeElapsed_total = timespecDiff(&end_total, &start_total);
-        uint64_t timeElapsed_save = timespecDiff(&end_save, &start_save);
-        uint64_t timeElapsed_load = timespecDiff(&end_load, &start_total);
-        uint64_t timeElapsed_lookup = timespecDiff(&start_pack, &end_load);
-
-        uint64_t timeElapsed_acc = timeElapsed_pack + timeElapsed_load + timeElapsed_save + timeElapsed_lookup;
-
-        printf("input length:%ld total_time(qs):%f acc_time(qs):%f pack_time(qs):%f load_time(qs):%f save_time(qs):%f lookup_time(qs):%f\n",
-               vlmax_8,
-               ((double)timeElapsed_total / 1000),
-               ((double)timeElapsed_acc / 1000),
-               ((double)timeElapsed_pack / 1000),
-               ((double)timeElapsed_load / 1000),
-               ((double)timeElapsed_save / 1000),
-               ((double)timeElapsed_lookup / 1000));
     }
     if (input_length != 0)
     {

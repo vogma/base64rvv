@@ -21,6 +21,7 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/include)
 
 # Specify source files
 set(SOURCE_FILES 
+    ${PROJECT_SOURCE_DIR}/lib/src/util/utils.c 
     ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_encode_m1.c 
     ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_decode_m1.c
     ${PROJECT_SOURCE_DIR}/lib/src/m2/base64_rvv_decode_m2.c

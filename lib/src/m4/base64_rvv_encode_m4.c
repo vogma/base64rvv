@@ -1,5 +1,6 @@
 
 #include <libb64rvv.h>
+#include <utils.h>
 
 vuint32m4_t __attribute__((always_inline)) inline lookup_m4(vuint8m4_t data, size_t vl)
 {
