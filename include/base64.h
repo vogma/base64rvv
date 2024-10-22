@@ -77,7 +77,7 @@ void readInputFile(struct arguments *args)
             fread(args->input_data, sizeof(char), bufsize, fptr);
             if (ferror(fptr) != 0)
             {
-                fputs("Error reading file", stderr);
+                fputs("Error reading file\n", stderr);
             }
             // else
             // {
@@ -88,6 +88,6 @@ void readInputFile(struct arguments *args)
     }
     else
     {
-        printf("Error opening file");
+        printf("Error opening file\n");
     }
 }
