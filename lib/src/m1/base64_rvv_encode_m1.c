@@ -41,7 +41,7 @@ vuint32m1_t __attribute__((always_inline)) inline lookup_m1(vuint8m1_t data, siz
     return __riscv_vor_vv_u32m1(__riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_ac), __riscv_vreinterpret_v_u16m1_u32m1(vec_shifted_bd), vl);
 }
 
-void base64_encode_rvv_m1(uint8_t *input, uint8_t *output, size_t length)
+void base64_encode_rvv_m1(uint8_t *input, char *output, size_t length)
 {
     size_t vl;
 
@@ -78,7 +78,7 @@ void base64_encode_rvv_m1(uint8_t *input, uint8_t *output, size_t length)
         // vuint8m1_t base64_chars = __riscv_vluxei8_v_u8m1(b64chars, __riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), vl);
         vuint8m1_t base64_chars = table_lookup_m1(__riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), offset_vec, vl);
 
-        __riscv_vse8_v_u8m1(output, base64_chars, vl);
+        __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(base64_chars), vl);
 
         vl = __riscv_vsetvl_e8m1(length);
 
