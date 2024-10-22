@@ -36,4 +36,4 @@ add_library(b64rvv STATIC ${SOURCE_FILES})
 #build base64 executable
 include_directories(${PROJECT_SOURCE_DIR}/include)
 add_executable(base64 ${PROJECT_SOURCE_DIR}/src/base64.c)
-target_link_libraries(base64 b64rvv)
+target_link_libraries(base64 b64rvv -static)
