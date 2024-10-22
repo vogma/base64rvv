@@ -1,7 +1,12 @@
 #include <utils.h>
+#include "stdlib.h"
 
 static const unsigned char b64chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+size_t base64_encoded_length(size_t len)
+{
+    return ((len + 2) / 3 * 4) + 1;
+}
 
 int Base64encode(char *encoded, const char *string, int len)
 {

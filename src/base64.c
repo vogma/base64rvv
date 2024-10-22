@@ -7,12 +7,40 @@
 
 #define N 1048576
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    struct arguments args = {0};
+    parse_arguments(argc, argv, &args);
 
-    // run_base64_decode();
-    // printf("\n\n----------------------\n\n");
-    // run_base64_encode();
+    if (args.printHelp)
+    {
+        print_help();
+        return 0;
+    }
 
+    printf("input path: %s\n", args.input_path);
+    printf("output path: %s\n", args.output_path);
+
+    readInputFile(&args);
+
+    size_t encoded_length = base64_encoded_length(args.file_size);
+
+    char *base64_data = malloc(encoded_length);
+
+    base64_encode_rvv_m1(args.input_data, (uint8_t *)base64_data, args.file_size);
+
+    if (base64_data != NULL)
+    {
+        for (int i = 0; i < encoded_length; i++)
+        {
+            printf("%c", base64_data[i]);
+        }
+    }
+    printf("\n");
+
+    printf("%ld\n", encoded_length);
+
+    free(args.input_data);
+    free(base64_data);
     return 0;
 }

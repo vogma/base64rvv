@@ -1,54 +1,93 @@
-#include "stdio.h"
-#include "stdint.h"
-#include "stdlib.h"
-#include <time.h>
 #include <libb64rvv.h>
+#include <getopt.h>
 
+static const struct option long_options[] = {
+    {"input_file", required_argument, 0, 'i'},
+    {"output_file", required_argument, 0, 'o'},
+    {"help", no_argument, 0, 'h'}};
 
-uint8_t *setupEncodingData(size_t size)
+struct arguments
 {
+    int printHelp;
+    char *input_path;
+    char *output_path;
+    uint8_t *input_data;
+    size_t file_size;
+};
 
-    srand(time(NULL));
-
-    uint8_t *inputData = (uint8_t *)malloc(sizeof(uint8_t) * size);
-
-    for (int i = 0; i < size; i++)
-    {
-        inputData[i] = rand() % (255 + 1 - 0) + 0;
-    }
-
-    return inputData;
+void print_help()
+{
+    printf("Help\n");
 }
 
-char *setupDecodingData(size_t size)
+void parse_arguments(int argc, char *argv[], struct arguments *args)
 {
-    // char alphabet[26] = "MTIzNDU2NysvQUJDREVGR0g=";
-    char alphabet[900] = "CgpIaSBldmVyeW9uZSwgaSByZWNlbnRseSBzdGFydGVkIHN0dWR5aW5nIHRoZSBSSVNDLVYgYXJjaGl0ZWN0dXJlLCBhbmQgbWFuYWdlZCB0byBtYWtlIG15IG93biAzMmJpdCB2ZXJzaW9uIGluIGEgZ2FtZSBjYWxsZWQgVHVyaW5nIGNvbXBsZXRlLiBUaGUgc3lzdGVtIGlzIGFibGUgdG8gZXhlY3V0ZSBldmVyeSBpbnN0cnVjdGlvbiBvZiB0aGUgYmFzZSBtb2R1bGVzLCBub3cgdGhhdCBpIHdhbnQgdG8gdHJ5IGFuZCBhZGQgc3VwcG9ydCBmb3IgZmxvYXRpbmcgcG9pbnQgbnVtYmVycywgaSdtIHN0dWNrIHdpdGggYSByZWFsbHkgc3R1cGlkIHF1ZXN0aW9uPwoKSSBhZGRlZCAzMiBzZXBhcmF0ZSByZWdpc3RlcnMgZm9yIHN0b3JpbmcgZmxvYXRzLCBhbmQgYW4gZW5jb2RlciBmb3IgdGhlIElFRUUtNzU0IGZvcm1hdC4gYnV0IGlmIGkgdXNlIHNvbWV0aGluZyBsaWtlCgpsaSB0MCwgNjU0MzIxCgpmY3Z0LnMudyBmdDAsIHQwCgpmdDAgd2lsbCBiZSBzZXQgdG8gNjU0MzIxLjAgKElFRUUgZW5jb2RlZCkKCkhlcmUgY29tZXMgdGhlIHN0dXBpZCBxdWVzdGlvbi4uLiBob3cgZG8gaSBwdXQgc3R1ZmYgYWZ0ZXIgdGhlIGRvdD8gZXZlcnkgbnVtYmVyIGkgY29udmVydCB3aWxsIGJlIGp1c3Qgbi4wCgpob3cgY2FuIGkgc2V0IGZ0MCB0byBzb21ldGhpbmcgbGlrZSAwLjYyIG9yIDEuND8=";
-
-    char *inputData = (char *)malloc(sizeof(char) * size);
-
-    for (int i = 0; i < size; i++)
+    while (1)
     {
-        inputData[i] = alphabet[i % 26];
-    }
-
-    return inputData;
-}
-
-void checkResults(uint8_t *output_scalar, uint8_t *output_vector, size_t length)
-{
-    size_t error = 0;
-    for (int i = 0; i < length; i++)
-    {
-        if (output_scalar[i] != output_vector[i])
+        int index = -1;
+        int result = getopt_long(argc, argv, "i:o:", long_options, &index);
+        if (result == -1)
+            break; /* end of list */
+        switch (result)
         {
-            printf("Error at index %d! vector is 0x%02X scalar is 0x%02X\n", i, output_vector[i], output_scalar[i]);
-            error = 1;
+        case 'i':
+            args->input_path = optarg;
+            break;
+        case 'o':
+            args->output_path = optarg;
+            break;
+        case 'h':
+            args->printHelp = 1;
+            break;
+        default: /* unknown */
             break;
         }
     }
-    if (!error)
+}
+
+void readInputFile(struct arguments *args)
+{
+    FILE *fptr;
+
+    fptr = fopen(args->input_path, "r");
+
+    args->input_data = NULL;
+
+    if (fptr != NULL)
     {
-        printf("No Errors\n");
+        /* Go to the end of the file. */
+        if (fseek(fptr, 0L, SEEK_END) == 0)
+        {
+            /* Get the size of the file. */
+            long bufsize = ftell(fptr);
+            if (bufsize == -1)
+            { /* Error */
+            }
+
+            /* Allocate our buffer to that size. */
+            args->input_data = malloc(sizeof(uint8_t) * (bufsize));
+            args->file_size = bufsize;
+
+            /* Go back to the start of the file. */
+            if (fseek(fptr, 0L, SEEK_SET) != 0)
+            { /* Error */
+            }
+
+            /* Read the entire file into memory. */
+            fread(args->input_data, sizeof(char), bufsize, fptr);
+            if (ferror(fptr) != 0)
+            {
+                fputs("Error reading file", stderr);
+            }
+            // else
+            // {
+            //     args->input_data[newLen++] = '\0'; /* Just to be safe. */
+            // }
+        }
+        fclose(fptr);
+    }
+    else
+    {
+        printf("Error opening file");
     }
 }
