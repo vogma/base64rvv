@@ -1,5 +1,4 @@
 #include <utils.h>
-#include "stdlib.h"
 
 static const unsigned char b64chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

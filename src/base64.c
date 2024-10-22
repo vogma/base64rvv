@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     char *base64_data = malloc(encoded_length);
 
-    base64_encode_rvv_m1(args.input_data, base64_data, args.file_size);
+    base64_encode_rvv_m4(args.input_data, base64_data, args.file_size);
 
     if (base64_data != NULL)
     {
