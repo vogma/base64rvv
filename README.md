@@ -1,23 +1,43 @@
-# Vectorized Base64 Encoder/Decoder for RISC-V RVV
+# Vectorized Base64 Encoding/Decoding for RISC-V RVV
 
-This repository contains a implementation of the Base64 encoding and decoding algorithms, optimized for the RISC-V architecture with the RVV (RISC-V Vector Extension). The implementation utilizes both C and intrinsic assembly functions to leverage the vector processing capabilities of the RVV extension.
-
-## About Base64
-
-Base64 is a binary-to-text encoding scheme that represents binary data in an ASCII string format by translating it into a radix-64 representation. It is commonly used when there is a need to encode binary data, especially when that data needs to be stored and transferred over media that are designed to deal with textual data. This encoding helps to ensure that the data remains intact without modification during transport.
-
-Base64 encoding involves dividing every three bytes of binary data into four groups of six bits each. Each group of six bits is used as an index into an array of 64 printable characters. The resulting characters are output as a string of ASCII characters. Padding characters (`=`) are added to the output to make its length a multiple of 4, which is necessary for the decoding process.
+This repository contains a vectorized Base64 encoding and decoding library targeting the RISC-V Vector Extension (RVV)
 
 ## Project Structure
 
-- **src/**: Contains the source files written in C, utilizing intrinsic assembly functions to access the vector capabilities of the RISC-V RVV extension.
-- **include/**: Includes header files with function declarations and macro definitions.
+- `lib/` - Contains the core library code implementing Base64 encoding and decoding using RISC-V RVV instructions.
+- `src/` - Contains example executable code demonstrating how to use the Base64 library.
+
+## Prerequisites
+
+To build and run this project, you will need:
+- A RISC-V cross-compiler, specifically `riscv64-unknown-linux-gnu-gcc`
+- CMake version 3.13 or later
 
 ## Building the Project
 
-To build the encoder and decoder, ensure you have a RISC-V toolchain with support for the RVV extension installed. You can compile the project using the following commands:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/vogma/base64rvv
+   cd base64rvv
+   ```
 
-```bash
-mkdir build
-make
-```
+2. **Create a build directory**
+   ```bash
+   mkdir build && cd build
+   ```
+
+3. **Generate build files using CMake**
+   ```bash
+   cmake ..
+   ```
+
+4. **Build the project**
+   ```bash
+   cmake --build .
+   ```
+
+This process will compile both the Base64 library and the example executable, which demonstrates encoding and decoding functionality.
+
+## Cross Compilation
+
+This project is designed to be cross-compiled for RISC-V. The `CMakeLists.txt` is configured to use the RISC-V GCC cross-compiler (`riscv64-unknown-linux-gnu-gcc`). Ensure that this compiler is available in your PATH.
