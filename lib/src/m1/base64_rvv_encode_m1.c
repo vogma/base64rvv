@@ -78,7 +78,7 @@ void base64_encode_rvv_m1(uint8_t *input, char *output, size_t length)
         // vuint8m1_t base64_chars = __riscv_vluxei8_v_u8m1(b64chars, __riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), vl);
         vuint8m1_t base64_chars = table_lookup_m1(__riscv_vreinterpret_v_u32m1_u8m1(vec_lookup_indices), offset_vec, vl);
 
-        __riscv_vse8_v_i8m1(output, __riscv_vreinterpret_v_u8m1_i8m1(base64_chars), vl);
+        __riscv_vse8_v_u8m1((unsigned char *)output, base64_chars, vl);
 
         vl = __riscv_vsetvl_e8m1(length);
 

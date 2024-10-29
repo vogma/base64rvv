@@ -28,7 +28,7 @@ vuint32m4_t __attribute__((always_inline)) inline lookup_m4(vuint8m4_t data, siz
     return __riscv_vor_vv_u32m4(__riscv_vreinterpret_v_u16m4_u32m4(vec_shifted_ac), __riscv_vreinterpret_v_u16m4_u32m4(vec_shifted_bd), vl);
 }
 
-const uint8_t base64_table_enc_6bit[] =
+const uint8_t base64_table_enc[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789"
@@ -56,7 +56,7 @@ vuint8m4_t __attribute__((always_inline)) inline table_lookup_m4(vuint8m4_t vec_
     // const vuint8m4_t vec_lookup = __riscv_vadd_vx_u8m4_mu(vec_lt_26, result, result, 13, vl);
 
     size_t vlmax_e8m4 = __riscv_vsetvlmax_e8m4();
-    vuint8m4_t test_shuffle_vec = __riscv_vle8_v_u8m4(base64_table_enc_6bit, vlmax_e8m4);
+    vuint8m4_t test_shuffle_vec = __riscv_vle8_v_u8m4(base64_table_enc, vlmax_e8m4);
 
     // printRegister(test_shuffle_vec);
 
