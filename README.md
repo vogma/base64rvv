@@ -30,14 +30,21 @@ To build and run this project, you will need:
    ```bash
    cmake ..
    ```
+   or 
+   ```bash
+   cmake .. -DBUILD_EXAMPLE=ON
+   ```
+   to build an executable demonstrating encoding and decoding functionality. 
 
-4. **Build the project**
+5. **Build the project**
    ```bash
    cmake --build .
    ```
 
-This process will compile both the Base64 library and the example executable, which demonstrates encoding and decoding functionality.
-
 ## Cross Compilation
 
-This project is designed to be cross-compiled for RISC-V. The `CMakeLists.txt` is configured to use the RISC-V GCC cross-compiler (`riscv64-unknown-linux-gnu-gcc`). Ensure that this compiler is available in your PATH.
+To cross compile this library, cmake has to be configured to use the correct cross-compiler. For example:
+   ```bash
+   CC=riscv64-unknown-linux-gnu-gcc cmake ..
+   ```
+
