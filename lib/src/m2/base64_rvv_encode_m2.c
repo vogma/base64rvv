@@ -45,7 +45,7 @@ vuint8m2_t __attribute__((always_inline)) inline table_lookup_m2(vuint8m2_t vec_
     return __riscv_vreinterpret_v_i8m2_u8m2(ascii_vec);
 }
 
-void base64_encode_rvv_m2(uint8_t *input, uint8_t *output, size_t length)
+void base64_encode_rvv_m2(uint8_t *input, char *output, size_t length)
 {
     size_t vl;
 
@@ -91,11 +91,11 @@ void base64_encode_rvv_m2(uint8_t *input, uint8_t *output, size_t length)
         // vuint8m2_t base64_chars = __riscv_vluxei8_v_u8m2(b64chars, __riscv_vreinterpret_v_u32m2_u8m2(vec_lookup_indices), vl);
         vuint8m2_t base64_chars = table_lookup_m2(__riscv_vreinterpret_v_u32m2_u8m2(vec_lookup_indices), offset_vec, vl);
 
-        __riscv_vse8_v_u8m2(output, base64_chars, vl);
+        __riscv_vse8_v_u8m2((unsigned char*)output, base64_chars, vl);
 
         vl = __riscv_vsetvl_e8m2(length);
 
         output += vlmax_e8m2;
     }
-    Base64encode((char *)output, (char *)input, length);
+    Base64encode(output, (char *)input, length);
 }
