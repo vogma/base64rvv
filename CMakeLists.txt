@@ -16,7 +16,7 @@ else()
     set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
 endif()
 
-ADD_COMPILE_OPTIONS(-march=rv64gcv -mabi=lp64d -O3 -static -Wall -g)
+ADD_COMPILE_OPTIONS(-march=rv64gcv_zba -mabi=lp64d -O3 -static -Wall -g)
 
 # Add include directories
 include_directories(${PROJECT_SOURCE_DIR}/lib/include)

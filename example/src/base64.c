@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     base64_encode_rvv_m1_asm((uint8_t*)input, output, 11);
 
     printf("0x%02X\n", input[0]);
-    printf("0x%02X\n", output[0]);
+    printf("%d\n", output[0]);
 
     // void base64_encode_rvv_m1_asm(uint8_t *input, char *output, size_t length);
 
