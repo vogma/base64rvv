@@ -18,9 +18,7 @@ extern "C"
     size_t base64_decode_rvv_m2(const char *data, int8_t *output, size_t input_length);
     size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_length);
 
-    size_t base64_encoded_length(size_t len);
-
-    size_t b64_decode_rvv(const char *src, char *dst, size_t length);
+    void base64_encode_rvv_m1_asm(uint8_t *input, char *output, size_t length);
 
 #ifdef __cplusplus
 }

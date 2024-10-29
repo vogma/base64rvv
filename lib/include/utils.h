@@ -4,6 +4,7 @@
 #include <riscv_vector.h>
 
 int Base64encode(char *encoded, const char *string, int len);
+size_t base64_encoded_length(size_t len);
 unsigned int base64_decode_tail(const char *in, unsigned int inlen, unsigned char *out);
 
 static const uint8_t index_decode[] = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 18, 17, 16, 22, 21, 20, 26, 25, 24, 30, 29, 28, 34, 33, 32, 38, 37, 36, 42, 41, 40, 46, 45, 44, 50, 49, 48, 54, 53, 52, 58, 57, 56, 62, 61, 60, 66, 65, 64, 70, 69, 68, 74, 73, 72, 78, 77, 76, 82, 81, 80, 86, 85, 84, 90, 89, 88, 94, 93, 92, 98, 97, 96, 102, 101, 100, 106, 105, 104, 110, 109, 108, 114, 113, 112, 118, 117, 116, 122, 121, 120, 126, 125, 124};

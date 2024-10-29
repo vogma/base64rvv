@@ -86,3 +86,11 @@ void base64_encode_rvv_m1(uint8_t *input, char *output, size_t length)
     }
     Base64encode((char *)output, (char *)input, length);
 }
+
+void base64rvv_encode_m1_asm(uint8_t *input, char *output, size_t length, const uint8_t *gather_index_lmul8, const int8_t *offsets);
+
+
+void base64_encode_rvv_m1_asm(uint8_t *input, char *output, size_t length)
+{
+    base64rvv_encode_m1_asm(input, output, length, gather_index_lmul8, offsets);
+}

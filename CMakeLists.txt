@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(base64rvv VERSION 0.1 LANGUAGES C)
+project(base64rvv VERSION 0.1 LANGUAGES C ASM)
 
 SET(BUILD_EXAMPLE CACHE BOOL OFF)
 
@@ -24,8 +24,9 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/include)
 # Specify source files
 set(SOURCE_FILES 
     ${PROJECT_SOURCE_DIR}/lib/src/util/utils.c 
-    ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_encode_m1.c 
-    ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_decode_m1.c
+    ${PROJECT_SOURCE_DIR}/lib/src/m1/base64rvv_encode.S
+    ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_encode_m1.c
+    ${PROJECT_SOURCE_DIR}/lib/src/m1/base64_rvv_encode_m1.c
     ${PROJECT_SOURCE_DIR}/lib/src/m2/base64_rvv_decode_m2.c
     ${PROJECT_SOURCE_DIR}/lib/src/m2/base64_rvv_encode_m2.c
     ${PROJECT_SOURCE_DIR}/lib/src/m4/base64_rvv_encode_m4.c
