@@ -5,7 +5,7 @@ This repository contains a vectorized Base64 encoding and decoding library targe
 ## Project Structure
 
 - `lib/` - Contains the core library code implementing Base64 encoding and decoding using RISC-V RVV instructions.
-- `src/` - Contains example executable code demonstrating how to use the Base64 library.
+- `example/` - Contains example executable code demonstrating how to use the Base64 library.
 
 ## Prerequisites
 
