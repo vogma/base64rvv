@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(base64rvv VERSION 0.1 LANGUAGES C)
 
-SET(BUILD_EXAMPLES CACHE BOOL OFF)
+SET(BUILD_EXAMPLE CACHE BOOL OFF)
 
 # Check if the current system processor matches RISC-V
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "riscv")
@@ -36,7 +36,7 @@ set(SOURCE_FILES
 add_library(b64rvv STATIC ${SOURCE_FILES})
 
 #build base64 executable
-if(BUILD_EXAMPLES)
+if(BUILD_EXAMPLE)
     include_directories(${PROJECT_SOURCE_DIR}/include)
     add_executable(base64 ${PROJECT_SOURCE_DIR}/src/base64.c)
     target_link_libraries(base64 b64rvv -static)
