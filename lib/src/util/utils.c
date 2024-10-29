@@ -1,6 +1,21 @@
 #include <utils.h>
+#include <riscv_vector.h>
 
 static const unsigned char b64chars[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+void printRegister(vuint8m4_t vec)
+{
+    size_t vlmax_e8m4 = __riscv_vsetvlmax_e8m4();
+    uint8_t memory[vlmax_e8m4];
+
+    __riscv_vse8_v_u8m4(memory, vec, vlmax_e8m4);
+    printf("register contents: ");
+    for (int i = 0; i < vlmax_e8m4; i++)
+    {
+        printf("%c", memory[i]);
+    }
+    printf("\n");
+}
 
 size_t base64_encoded_length(size_t len)
 {

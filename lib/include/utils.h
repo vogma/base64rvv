@@ -1,5 +1,7 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <riscv_vector.h>
 
 int Base64encode(char *encoded, const char *string, int len);
 unsigned int base64_decode_tail(const char *in, unsigned int inlen, unsigned char *out);
@@ -16,3 +18,5 @@ static const uint8_t gather_index_lmul4[32] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 
 static const uint8_t gather_index_lmul8[] = {1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10, 13, 12, 14, 13, 16, 15, 17, 16, 19, 18, 20, 19, 22, 21, 23, 22, 25, 24, 26, 25, 28, 27, 29, 28, 31, 30, 32, 31, 34, 33, 35, 34, 37, 36, 38, 37, 40, 39, 41, 40, 43, 42, 44, 43, 46, 45, 47, 46, 49, 48, 50, 49, 52, 51, 53, 52, 55, 54, 56, 55, 58, 57, 59, 58, 61, 60, 62, 61};
 
 static const int8_t offsets[68] = {71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+void printRegister(vuint8m4_t vec);
