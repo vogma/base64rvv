@@ -55,7 +55,8 @@ void base64_encode_rvv_m2(uint8_t *input, char *output, size_t length)
     const vuint8m1_t vec_index_e8m1 = createGatherIndexEncode(vlmax_e8m1);
     // const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_e8m1);
 
-    vint8m1_t offset_vec = __riscv_vle8_v_i8m1(offsets, vlmax_e8m1);
+    vint8m1_t offset_vec = __riscv_vmv_v_x_i8m1(0, vlmax_e8m1);
+    offset_vec = __riscv_vle8_v_i8m1(offsets, (sizeof(offsets)/sizeof(offsets[0])));
 
     size_t input_slice_e8m2 = (vlmax_e8m2 / 4) * 3;
     size_t input_slice_e8m1 = (vlmax_e8m1 / 4) * 3;

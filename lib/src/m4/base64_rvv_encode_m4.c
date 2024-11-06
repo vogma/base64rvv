@@ -38,7 +38,7 @@ vuint8m4_t __attribute__((always_inline)) inline table_lookup_m4_single_gather(v
 {
     size_t vlmax_e8m4 = __riscv_vsetvlmax_e8m4();
     vuint8m4_t test_shuffle_vec = __riscv_vle8_v_u8m4(base64_table_enc, vlmax_e8m4);
-    return __riscv_vrgather_vv_u8m4(test_shuffle_vec, vec_indices, vlmax_e8m4); 
+    return __riscv_vrgather_vv_u8m4(test_shuffle_vec, vec_indices, vlmax_e8m4);
 }
 
 vuint8m4_t __attribute__((always_inline)) inline table_lookup_m4(vuint8m4_t vec_indices, vint8m1_t offset_vec, size_t vl)
@@ -71,8 +71,8 @@ void base64_encode_rvv_m4(uint8_t *input, char *output, size_t length)
     // const vuint8m1_t vec_index_e8m1 = __riscv_vle8_v_u8m1(gather_index_lmul4, vlmax_e8m1);
     const vuint8m1_t vec_index_e8m1 = createGatherIndexEncode(vlmax_e8m1);
 
-
-    vint8m1_t offset_vec = __riscv_vle8_v_i8m1(offsets, vlmax_e8m1);
+    vint8m1_t offset_vec = __riscv_vmv_v_x_i8m1(0, vlmax_e8m1);
+    offset_vec = __riscv_vle8_v_i8m1(offsets, (sizeof(offsets)/sizeof(offsets[0])));
 
     size_t input_slice_e8m4 = (vlmax_e8m4 / 4) * 3;
     size_t input_slice_e8m1 = (vlmax_e8m1 / 4) * 3;
