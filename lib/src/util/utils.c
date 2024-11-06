@@ -17,9 +17,41 @@ void printRegister(vuint8m4_t vec)
     printf("\n");
 }
 
-size_t base64_encoded_length(size_t len)
+/**
+ * creates gather indices for a given vlen.
+ *
+ * example vlen=128, bytes shown
+ * 0 0 0 0 0 0 0 1 0 0 0 2 0 0 0 3 <- vid 32-bit lanes
+ * 0 0 0 0 0 0 1 0 0 0 2 0 0 0 3 0 <- left shift by 8
+ * 0 0 0 0 0 1 0 0 0 2 0 0 0 3 0 0 <- left shift by 16
+ * 0 0 0 0 1 0 0 0 2 0 0 0 3 0 0 0 <- left shift by 24
+
+ * 0 0 0 0 1 1 1 1 2 2 2 2 3 3 3 3 <- or all of the above
+ * 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 <- broadcast constant value 3
+
+ * 0 0 0 0 3 3 3 3 6 6 6 6 9 9 9 9 <- multiply both lines above
+ * 1 0 2 1 1 0 2 1 1 0 2 1 1 0 2 1 <- broadcast index base value 0x01020001
+
+ * 1 0 2 1 4 3 5 4 7 6 8 7 10 9 11 10 <- add both lines above / finished index values
+ */
+vuint8m1_t createGatherIndexEncode(size_t vl)
 {
-    return ((len + 2) / 3 * 4) + 1;
+    vuint32m1_t ids = __riscv_vid_v_u32m1(vl * 4);
+    vuint32m1_t ids_shift8 = __riscv_vsll(ids, 8, vl);
+    vuint32m1_t ids_shift16 = __riscv_vsll(ids, 16, vl);
+    vuint32m1_t ids_shift24 = __riscv_vsll(ids, 24, vl);
+    ids = __riscv_vor(ids, ids_shift8, vl);
+    ids = __riscv_vor(ids, ids_shift16, vl);
+    ids = __riscv_vor(ids, ids_shift24, vl);
+
+    uint8_t test[32];
+
+    const vuint8m1_t const_vec_3 = __riscv_vmv_v_x_u8m1(3, vl);
+    const vuint8m1_t const_index_vec = __riscv_vreinterpret_u8m1(__riscv_vmv_v_x_u32m1(0x01020001, vl));
+
+    vuint8m1_t index_vec = __riscv_vmul(const_vec_3, __riscv_vreinterpret_u8m1(ids), vl);
+
+    return __riscv_vadd(index_vec, const_index_vec, vl);
 }
 
 int Base64encode(char *encoded, const char *string, int len)
