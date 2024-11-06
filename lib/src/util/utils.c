@@ -34,7 +34,7 @@ void printRegister(vuint8m4_t vec)
 
  * 1 0 2 1 4 3 5 4 7 6 8 7 10 9 11 10 <- add both lines above / finished index values
  */
-vuint8m1_t createGatherIndexEncode(size_t vl)
+vuint8m1_t __attribute__((always_inline)) inline createGatherIndexEncode(size_t vl)
 {
     vuint32m1_t ids = __riscv_vid_v_u32m1(vl * 4);
     vuint32m1_t ids_shift8 = __riscv_vsll(ids, 8, vl);
@@ -43,8 +43,6 @@ vuint8m1_t createGatherIndexEncode(size_t vl)
     ids = __riscv_vor(ids, ids_shift8, vl);
     ids = __riscv_vor(ids, ids_shift16, vl);
     ids = __riscv_vor(ids, ids_shift24, vl);
-
-    uint8_t test[32];
 
     const vuint8m1_t const_vec_3 = __riscv_vmv_v_x_u8m1(3, vl);
     const vuint8m1_t const_index_vec = __riscv_vreinterpret_u8m1(__riscv_vmv_v_x_u32m1(0x01020001, vl));
