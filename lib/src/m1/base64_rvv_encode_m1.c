@@ -57,7 +57,6 @@ void base64_encode_rvv_m1(uint8_t *input, char *output, size_t length)
 
     for (; length >= input_slice_e8m1; length -= input_slice_e8m1)
     {
-
         vl = __riscv_vsetvl_e8m1(input_slice_e8m1);
 
         /**

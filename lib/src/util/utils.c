@@ -52,6 +52,36 @@ vuint8m1_t __attribute__((always_inline)) inline createGatherIndexEncode(size_t 
     return __riscv_vadd(index_vec, const_index_vec, vl);
 }
 
+/**
+ * creates the indices for the decode gather, if VLEN > 512 bit.
+ * Index pattern: 2, 1, 0, 6, 5 ,4, 10, 9, 8, ...
+ */
+vuint8m1_t createGatherIndexDecode(size_t vl)
+{
+    size_t index_size = vl / 3 + 1;
+    uint8_t indices[index_size];
+
+    for (int i = 0, j = 0; i < index_size; i++, j += 3)
+    {
+        indices[j] = 4 * i + 2;
+        indices[j + 1] = 4 * i + 1;
+        indices[j + 2] = 4 * i;
+    }
+    return __riscv_vle8_v_u8m1(indices, vl);
+}
+
+vuint8m1_t createDecodeIndices(size_t vl)
+{
+    if (vl <= (512 / 8))
+    {
+        return __riscv_vle8_v_u8m1(index_decode, vl);
+    }
+    else
+    {
+        return createGatherIndexDecode(vl);
+    }
+}
+
 int Base64encode(char *encoded, const char *string, int len)
 {
     int i;

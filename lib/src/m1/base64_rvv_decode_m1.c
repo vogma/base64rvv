@@ -25,7 +25,9 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
     size_t dLen = 0;
 
     vint8m1_t vec_shift_lut = __riscv_vmv_v_x_i8m1(0, vlmax_8);
-    vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, sizeof(shift_lut)/sizeof(shift_lut[0]));
+    vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, sizeof(shift_lut) / sizeof(shift_lut[0]));
+
+    const vuint8m1_t index_vector = createDecodeIndices(vlmax_8);
 
     for (; input_length >= vlmax_8; input_length -= vlmax_8)
     {
@@ -69,8 +71,6 @@ size_t base64_decode_rvv_m1(const char *data, int8_t *output, size_t input_lengt
         vuint32m1_t t2 = __riscv_vsrl_vx_u32m1(t0, 16, vlmax_32);
 
         vuint32m1_t packed_data = __riscv_vor_vv_u32m1(t1, t2, vlmax_32);
-
-        vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_8);
 
         // rearrange elements in vector
 

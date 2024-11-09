@@ -22,5 +22,8 @@ static const int8_t shift_lut[16] = {
 static const int8_t offsets[14] = {71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 65};
 
 vuint8m1_t createGatherIndexEncode(size_t vl);
+vuint8m1_t createGatherIndexDecode(size_t vl);
+
+vuint8m1_t createDecodeIndices(size_t vl);
 
 void printRegister(vuint8m4_t vec);

@@ -8,7 +8,7 @@ size_t base64_decode_rvv_m4(const char *data, int8_t *output, size_t input_lengt
     size_t vlmax_e8m1 = __riscv_vsetvlmax_e8m1();
     size_t dLen = 0;
 
-    const vuint8m1_t index_vector = __riscv_vle8_v_u8m1(index_decode, vlmax_e8m1);
+    const vuint8m1_t index_vector = createDecodeIndices(vlmax_e8m1);
 
     vint8m1_t vec_shift_lut = __riscv_vmv_v_x_i8m1(0, vlmax_8);
     vec_shift_lut = __riscv_vle8_v_i8m1(shift_lut, sizeof(shift_lut) / sizeof(shift_lut[0]));
