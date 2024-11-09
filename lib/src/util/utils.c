@@ -37,19 +37,19 @@ void printRegister(vuint8m4_t vec)
 vuint8m1_t __attribute__((always_inline)) inline createGatherIndexEncode(size_t vl)
 {
     vuint32m1_t ids = __riscv_vid_v_u32m1(vl * 4);
-    vuint32m1_t ids_shift8 = __riscv_vsll(ids, 8, vl);
-    vuint32m1_t ids_shift16 = __riscv_vsll(ids, 16, vl);
-    vuint32m1_t ids_shift24 = __riscv_vsll(ids, 24, vl);
-    ids = __riscv_vor(ids, ids_shift8, vl);
-    ids = __riscv_vor(ids, ids_shift16, vl);
-    ids = __riscv_vor(ids, ids_shift24, vl);
+    vuint32m1_t ids_shift8 = __riscv_vsll_vx_u32m1(ids, 8, vl);
+    vuint32m1_t ids_shift16 = __riscv_vsll_vx_u32m1(ids, 16, vl);
+    vuint32m1_t ids_shift24 = __riscv_vsll_vx_u32m1(ids, 24, vl);
+    ids = __riscv_vor_vv_u32m1(ids, ids_shift8, vl);
+    ids = __riscv_vor_vv_u32m1(ids, ids_shift16, vl);
+    ids = __riscv_vor_vv_u32m1(ids, ids_shift24, vl);
 
     const vuint8m1_t const_vec_3 = __riscv_vmv_v_x_u8m1(3, vl);
     const vuint8m1_t const_index_vec = __riscv_vreinterpret_u8m1(__riscv_vmv_v_x_u32m1(0x01020001, vl));
 
-    vuint8m1_t index_vec = __riscv_vmul(const_vec_3, __riscv_vreinterpret_u8m1(ids), vl);
+    vuint8m1_t index_vec = __riscv_vmul_vv_u8m1(const_vec_3, __riscv_vreinterpret_u8m1(ids), vl);
 
-    return __riscv_vadd(index_vec, const_index_vec, vl);
+    return __riscv_vadd_vv_u8m1(index_vec, const_index_vec, vl);
 }
 
 /**
