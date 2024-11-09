@@ -1,20 +1,7 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(base64rvv VERSION 0.1 LANGUAGES C)
+project(base64rvv VERSION 0.1 LANGUAGES C CXX)
 
-SET(BUILD_EXAMPLE CACHE BOOL OFF)
-
-# Check if the current system processor matches RISC-V
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "riscv")
-    # Use native compiler if on a RISC-V platform
-    message(STATUS "Using native compiler for RISC-V platform.")
-    set(CMAKE_C_COMPILER gcc)
-else()
-    # Set the RISC-V toolchain for non-RISC-V platforms
-    message(STATUS "Using riscv64-unknown-linux-gnu-gcc for non-RISC-V platform.")
-    set(CMAKE_SYSTEM_NAME Linux)
-    set(CMAKE_SYSTEM_PROCESSOR riscv)
-    set(CMAKE_C_COMPILER riscv64-unknown-linux-gnu-gcc)
-endif()
+set(BUILD_EXAMPLE CACHE BOOL OFF)
 
 ADD_COMPILE_OPTIONS(-march=rv64gcv -mabi=lp64d -O3 -static -Wall -g)
 
@@ -37,7 +24,9 @@ add_library(b64rvv STATIC ${SOURCE_FILES})
 
 #build base64 executable
 if(BUILD_EXAMPLE)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED True)
     include_directories(${PROJECT_SOURCE_DIR}/example/include)
-    add_executable(base64 ${PROJECT_SOURCE_DIR}/example/src/base64.c)
+    add_executable(base64 ${PROJECT_SOURCE_DIR}/example/src/base64.cpp)
     target_link_libraries(base64 b64rvv -static)
 endif()
